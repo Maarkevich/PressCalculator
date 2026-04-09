@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Пресс Калькулятор</title>
+<meta name="theme-color" content="#111210">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Пресс Калькулятор">
+<link rel="apple-touch-icon" id="ati">
+<link rel="manifest" id="mfst">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Share+Tech+Mono&family=Nunito:wght@400;500;600&display=swap&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#111210;--surface:#1c1e1a;--card:#232520;--border:#333530;--orange:#e07020;--orange2:#f5a623;--green:#6abf5e;--red:#e05050;--blue:#5b9bd5;--text:#edecea;--muted:#7a7870;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;padding:0 0 60px;}
+body::before{content:'';position:fixed;inset:0;background-image:repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(255,255,255,0.012) 3px,rgba(255,255,255,0.012) 4px);pointer-events:none;z-index:0;}
+.header{background:var(--surface);border-bottom:2px solid var(--orange);padding:14px 16px 12px;position:relative;z-index:2;}
+.header-top{display:flex;align-items:center;gap:12px;margin-bottom:3px;}
+.brick-icon{width:36px;height:36px;background:var(--orange);border-radius:4px;flex-shrink:0;position:relative;overflow:hidden;}
+.brick-icon::before{content:'';position:absolute;width:100%;height:2px;background:rgba(0,0,0,0.25);top:50%;transform:translateY(-50%);}
+.brick-icon::after{content:'';position:absolute;width:2px;height:100%;background:rgba(0,0,0,0.25);left:50%;transform:translateX(-50%);}
+h1{font-family:'Oswald',sans-serif;font-size:1.6rem;letter-spacing:.06em;font-weight:700;line-height:1;}
+h1 span{color:var(--orange);}
+.header-sub{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--muted);letter-spacing:.07em;padding-left:48px;}
+.tabs-nav{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--border);display:flex;}
+.tab-btn{flex:1;padding:13px 8px;background:transparent;border:none;color:var(--muted);font-family:'Oswald',sans-serif;font-size:.85rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--orange2);border-bottom-color:var(--orange);}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+.main{max-width:600px;margin:0 auto;padding:16px 14px 0;position:relative;z-index:1;display:flex;flex-direction:column;gap:12px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.card-head{background:var(--surface);border-bottom:1px solid var(--border);padding:9px 14px;display:flex;align-items:center;gap:8px;}
+.step-badge{font-family:'Share Tech Mono',monospace;font-size:.68rem;background:var(--orange);color:#111;padding:2px 6px;border-radius:3px;font-weight:700;}
+.card-title{font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;}
+.card-body{padding:14px;}
+.press-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.press-btn{background:var(--surface);border:2px solid var(--border);border-radius:6px;padding:14px 12px;cursor:pointer;transition:all .15s;text-align:left;color:var(--text);font-family:'Nunito',sans-serif;}
+.press-btn:hover{border-color:var(--orange);}
+.press-btn.active{border-color:var(--orange);background:rgba(224,112,32,.1);}
+.pb-name{font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--orange2);display:block;margin-bottom:3px;}
+.pb-brick{font-family:'Share Tech Mono',monospace;font-size:.66rem;color:var(--muted);display:block;margin-bottom:7px;}
+.pb-stats{font-size:.76rem;color:var(--text);line-height:1.7;}
+.pb-stats b{color:var(--orange2);}
+.brick-row{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.brick-row-label{font-family:'Share Tech Mono',monospace;font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px;}
+input[type="number"],input[type="time"]{background:var(--surface);border:1.5px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:1rem;padding:8px 12px;outline:none;transition:border-color .15s;text-align:center;}
+input[type="number"]:focus,input[type="time"]:focus{border-color:var(--orange);}
+input[type="time"]{width:120px;color-scheme:dark;}
+input[type="range"]{-webkit-appearance:none;flex:1;height:5px;background:var(--border);border-radius:3px;outline:none;cursor:pointer;border:none;min-width:60px;}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(106,191,94,.4);cursor:pointer;}
+.norm-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.presets-wrap{display:flex;gap:7px;flex-wrap:wrap;}
+.pb{background:var(--surface);border:1.5px solid var(--border);border-radius:5px;padding:7px 13px;font-family:'Share Tech Mono',monospace;font-size:.86rem;color:var(--text);cursor:pointer;transition:all .15s;}
+.pb:hover{border-color:var(--orange);color:var(--orange2);}
+.pb.active{border-color:var(--orange);background:rgba(224,112,32,.1);color:var(--orange2);}
+.pb.bl:hover{border-color:var(--blue);color:var(--blue);}
+.pb.bl.active{border-color:var(--blue);background:rgba(91,155,213,.1);color:var(--blue);}
+.pb.bk:hover{border-color:var(--green);color:var(--green);}
+.pb.bk.active{border-color:var(--green);background:rgba(106,191,94,.1);color:var(--green);}
+.iw{display:flex;align-items:center;gap:8px;}
+.iw label{font-size:.74rem;color:var(--muted);white-space:nowrap;}
+.waste-box{margin-top:12px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:4px;padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--muted);display:none;}
+.waste-box.on{display:block;}
+.wb-m{font-size:.9rem;color:var(--text);margin-bottom:3px;}
+.wb-m b{color:var(--orange2);font-size:1.1rem;}
+.time-section{display:flex;flex-direction:column;gap:11px;}
+.time-presets{display:flex;flex-wrap:wrap;gap:6px;}
+.tp{background:var(--surface);border:1.5px solid var(--border);border-radius:5px;padding:6px 11px;font-family:'Share Tech Mono',monospace;font-size:.8rem;color:var(--muted);cursor:pointer;transition:all .15s;}
+.tp:hover{border-color:var(--green);color:var(--green);}
+.tp.active{border-color:var(--green);background:rgba(106,191,94,.1);color:var(--green);}
+.time-manual{display:flex;align-items:center;gap:10px;}
+.time-manual label{font-size:.74rem;color:var(--muted);white-space:nowrap;}
+.sw-wrap{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:12px;}
+.sw-lbl{font-family:'Share Tech Mono',monospace;font-size:.64rem;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;margin-bottom:9px;}
+.sw-disp{font-family:'Oswald',sans-serif;font-size:2.6rem;font-weight:700;color:var(--orange2);text-align:center;letter-spacing:.05em;line-height:1;margin-bottom:11px;transition:color .2s;}
+.sw-disp.run{color:var(--green);}
+.sw-btns{display:flex;gap:8px;}
+.sw-btn{flex:1;padding:9px;border-radius:5px;border:1.5px solid var(--border);font-family:'Oswald',sans-serif;font-size:.88rem;letter-spacing:.06em;cursor:pointer;transition:all .15s;background:var(--card);color:var(--text);}
+.sw-btn.go{border-color:var(--green);color:var(--green);}
+.sw-btn.stop{border-color:var(--orange);color:var(--orange2);}
+.sw-res{margin-top:9px;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--muted);text-align:center;display:none;}
+.sw-res.on{display:block;}
+.sw-res b{color:var(--green);font-size:.95rem;}
+.se-lbl{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+.se-res{margin-top:12px;display:none;background:rgba(91,155,213,.07);border:1px solid rgba(91,155,213,.28);border-radius:5px;padding:12px;text-align:center;}
+.se-res.on{display:block;}
+.se-res .sl{font-family:'Share Tech Mono',monospace;font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.se-res .st{font-family:'Oswald',sans-serif;font-size:2.1rem;font-weight:700;color:var(--blue);letter-spacing:.05em;}
+.se-res .ss{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--muted);margin-top:3px;}
+.result-card{background:linear-gradient(135deg,rgba(224,112,32,.1),rgba(245,166,35,.05));border:1.5px solid rgba(224,112,32,.4);border-radius:6px;padding:16px;display:none;}
+.result-card.on{display:block;}
+.formula-line{margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--muted);line-height:1.9;}
+.formula-line b{color:var(--text);}
+input.si{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:5px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:1.3rem;padding:10px 14px;outline:none;transition:border-color .15s;text-align:left;}
+input.si:focus{border-color:var(--orange);}
+.wr{border-radius:6px;padding:14px;border:1.5px solid var(--border);background:var(--card);}
+.wr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.wr-tile{background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:5px;padding:10px 12px;}
+.wt-l{font-family:'Share Tech Mono',monospace;font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;}
+.wt-v{font-family:'Oswald',sans-serif;font-size:1.7rem;font-weight:700;line-height:1;display:block;}
+.wt-s{font-family:'Share Tech Mono',monospace;font-size:.66rem;color:var(--muted);display:block;margin-top:2px;}
+.cu{color:var(--orange2);}.co{color:var(--green);}.cr{color:var(--red);}
+.pw{height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden;margin-top:7px;}
+.pb2{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--orange2));transition:width .4s;}
+.pb2.ov{background:var(--red);}
+.wb2{display:none;margin-top:10px;padding:10px 12px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:.77rem;}
+.wb2.on{display:block;}
+.wb2.bad{background:rgba(224,80,80,.1);border:1px solid rgba(224,80,80,.35);color:var(--red);}
+.wb2.ok{background:rgba(106,191,94,.07);border:1px solid rgba(106,191,94,.28);color:var(--green);}
+.wb2.mid{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);color:var(--orange2);}
+.wf{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--muted);line-height:1.9;padding-top:10px;border-top:1px solid var(--border);margin-top:10px;}
+.wf b{color:var(--text);}
+@media(max-width:420px){.press-grid,.wr-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top"><div class="brick-icon"></div><h1>ПРЕСС <span>КАЛЬКУЛЯТОР</span></h1></div>
+  <div class="header-sub">// РАСЧЁТ ВРЕМЕНИ · ОТВАЛ/ДОКЛАДКА · СЕКУНДОМЕР</div>
+</div>
+<div class="tabs-nav">
+  <button class="tab-btn active" onclick="switchTab('time')">⏱ Время</button>
+  <button class="tab-btn" onclick="switchTab('waste')">📊 Отвал / Докладка</button>
+</div>
+
+<!-- TAB ВРЕМЯ -->
+<div class="tab-panel active" id="tab-time"><div class="main">
+  <div class="card">
+    <div class="card-head"><span class="step-badge">01</span><span class="card-title">Выбор пресса</span></div>
+    <div class="card-body">
+      <div class="press-grid">
+        <button class="press-btn" id="tBtnA" onclick="tSP('A')">
+          <span class="pb-name">ПРЕСС А</span>
+          <span class="pb-brick" id="tBrickLabelA">КСУРПо</span>
+          <span class="pb-stats">Прессований/ваг: <b id="tPpwA">36</b><br>Норма отвала: <b>0.6%</b></span>
+        </button>
+        <button class="press-btn" id="tBtnB" onclick="tSP('B')">
+          <span class="pb-name">ПРЕСС Б</span>
+          <span class="pb-brick" id="tBrickLabelB">СКРпу</span>
+          <span class="pb-stats">Прессований/ваг: <b id="tPpwB">32</b><br>Норма отвала: <b>1.5%</b></span>
+        </button>
+      </div>
+      <div class="brick-row" id="tBrickRow" style="display:none">
+        <div class="brick-row-label">Тип кирпича:</div>
+        <div class="presets-wrap" id="tBrickBtns"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="step-badge">02</span><span class="card-title">Норма вагонеток на смену</span></div>
+    <div class="card-body">
+      <div class="norm-row"><div class="presets-wrap" id="tNP"></div>
+        <div class="iw"><label>вручную:</label><input type="number" id="tNI" inputmode="numeric" style="width:72px" min="1" max="200" placeholder="—" oninput="onTNI()"></div>
+      </div>
+      <div class="waste-box" id="tWB"><div class="wb-m" id="tWM"></div><div id="tWS"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="step-badge">03</span><span class="card-title">Время одной вагонетки (мин)</span></div>
+    <div class="card-body"><div class="time-section">
+      <div class="time-presets" id="tTP"></div>
+      <div class="time-manual">
+        <label>точно:</label>
+        <input type="number" id="tTI" inputmode="decimal" style="width:72px" min="5" max="30" step="0.1" value="8.0" oninput="onTTI()">
+        <input type="range" id="tTR" min="50" max="300" value="80" oninput="onTTR()">
+      </div>
+      <div class="sw-wrap">
+        <div class="sw-lbl">⏱ Секундомер — точный замер вагонетки</div>
+        <div class="sw-disp" id="swD">0:00.0</div>
+        <div class="sw-btns">
+          <button class="sw-btn go" id="swB" onclick="swTog()">СТАРТ</button>
+          <button class="sw-btn" onclick="swRst()">СБРОС</button>
+        </div>
+        <div class="sw-res" id="swR">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--muted);margin-bottom:8px;">Скорректируй если нужно:</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:5px;">
+              <input type="number" id="swEm" inputmode="numeric" min="0" max="30" style="width:58px;text-align:center;" oninput="swUpdatePreview()">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:.8rem;color:var(--muted);">мин</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <input type="number" id="swEs" inputmode="numeric" min="0" max="59" style="width:58px;text-align:center;" oninput="swUpdatePreview()">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:.8rem;color:var(--muted);">сек</span>
+            </div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:.82rem;color:var(--green);">→ <b id="swPrev">—</b></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="swApply()" style="background:var(--green);border:none;border-radius:5px;padding:9px 22px;font-family:'Oswald',sans-serif;font-size:.95rem;letter-spacing:.06em;color:#111;cursor:pointer;font-weight:600;">✓ ПРИМЕНИТЬ</button>
+            <button onclick="swRst()" style="background:none;border:1.5px solid var(--border);border-radius:5px;padding:9px 16px;font-family:'Oswald',sans-serif;font-size:.9rem;color:var(--muted);cursor:pointer;">Отмена</button>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="step-badge">04</span><span class="card-title">Осталось напечатать вагонеток</span></div>
+    <div class="card-body">
+      <div class="norm-row"><div class="presets-wrap" id="tRP"></div>
+        <div class="iw"><label>вручную:</label><input type="number" id="tRI" inputmode="numeric" style="width:72px" min="0" max="150" placeholder="—" oninput="onTRI()"></div>
+      </div>
+    </div>
+  </div>
+  <div class="se-res" id="seR" style="margin:0 0 4px;">
+    <div class="sl">Закончим печатать в</div>
+    <div class="st" id="seET">—</div>
+    <div class="ss" id="seES"></div>
+  </div>
+  <div class="result-card" id="tRC">
+    <div style="text-align:center;padding:4px 0 12px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.66rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">⏱ осталось печатать</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:clamp(2.6rem,12vw,4.6rem);font-weight:700;color:var(--orange2);line-height:1.1;letter-spacing:.04em;" id="tRT">—</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--muted);margin-top:6px;" id="tRS"></div>
+    </div>
+    <div class="formula-line" id="tRF"></div>
+  </div>
+</div></div>
+
+<!-- TAB ОТВАЛ -->
+<div class="tab-panel" id="tab-waste"><div class="main">
+  <div class="card">
+    <div class="card-head"><span class="step-badge">01</span><span class="card-title">Выбор пресса</span></div>
+    <div class="card-body">
+      <div class="press-grid">
+        <button class="press-btn" id="wBtnA" onclick="wSP('A')">
+          <span class="pb-name">ПРЕСС А</span>
+          <span class="pb-brick" id="wBrickLabelA">КСУРПо</span>
+          <span class="pb-stats">Ходов на вагонетку: <b id="wPpwA">36</b><br>Норма отвала: <b>0.6%</b></span>
+        </button>
+        <button class="press-btn" id="wBtnB" onclick="wSP('B')">
+          <span class="pb-name">ПРЕСС Б</span>
+          <span class="pb-brick" id="wBrickLabelB">СКРпу</span>
+          <span class="pb-stats">Ходов на вагонетку: <b id="wPpwB">32</b><br>Норма отвала: <b>1.5%</b></span>
+        </button>
+      </div>
+      <div class="brick-row" id="wBrickRow" style="display:none">
+        <div class="brick-row-label">Тип кирпича:</div>
+        <div class="presets-wrap" id="wBrickBtns"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="step-badge">02</span><span class="card-title">Норма вагонеток на смену</span></div>
+    <div class="card-body">
+      <div class="norm-row"><div class="presets-wrap" id="wNP"></div>
+        <div class="iw"><label>вручную:</label><input type="number" id="wNI" inputmode="numeric" style="width:72px" min="1" max="200" placeholder="—" oninput="onWNI()"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="step-badge">03</span><span class="card-title">Ходы в начале смены</span></div>
+    <div class="card-body">
+      <input class="si" type="number" id="wSS" inputmode="numeric" placeholder="например: 1224424" oninput="wCalc();saveState()">
+      <div style="margin-top:6px;font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--muted);">Записывается в начале смены — вводится один раз</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="step-badge">04</span><span class="card-title">Ходы по факту (с последней вагонетки)</span></div>
+    <div class="card-body">
+      <input class="si" type="number" id="wSN" inputmode="numeric" placeholder="например: 1226342" oninput="wCalc();saveState()">
+      <div style="margin-top:6px;font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--muted);">Число с последнего прессования на текущей вагонетке</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="step-badge">05</span><span class="card-title">Напечатано вагонеток</span></div>
+    <div class="card-body">
+      <div class="norm-row"><div class="presets-wrap" id="wWP"></div>
+        <div class="iw"><label>вручную:</label><input type="number" id="wWI" inputmode="numeric" style="width:72px" min="0" max="200" placeholder="—" oninput="onWWI()"></div>
+      </div>
+      <div style="margin-top:7px;font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--muted);" id="wWN"></div>
+    </div>
+  </div>
+  <div class="wr" id="wRes" style="display:none;">
+    <div class="wr-grid">
+      <div class="wr-tile"><span class="wt-l">Ходов в отвал</span><span class="wt-v cu" id="wRU">—</span><span class="wt-s">сделано</span></div>
+      <div class="wr-tile"><span class="wt-l">Норма отвала</span><span class="wt-v" id="wRN" style="color:var(--orange2)">—</span><span class="wt-s">допустимо всего</span></div>
+      <div class="wr-tile"><span class="wt-l">Осталось в отвал</span><span class="wt-v co" id="wRL">—</span><span class="wt-s" id="wRLS">ещё можно</span></div>
+      <div class="wr-tile"><span class="wt-l">Использовано %</span><span class="wt-v co" id="wRP">—</span><div class="pw"><div class="pb2" id="wRB" style="width:0%"></div></div></div>
+    </div>
+    <div class="wb2" id="wRW"></div>
+    <div class="wf" id="wRF"></div>
+  </div>
+</div></div>
+
+<script>
+// ============================================================
+// ДАННЫЕ ПРЕССОВ
+// Чтобы добавить тип кирпича — добавь объект в массив нужного пресса:
+// { id: 'уникальный_id', name: 'Название', ppw: 40 }
+// ppw = количество прессований (ходов) на одну вагонетку
+// ============================================================
+const BRICKS = {
+  A: [
+    { id: 'KSURPo', name: 'КСУРПо', ppw: 36 },
+  ],
+  B: [
+    { id: 'SKRpu', name: 'СКРпу', ppw: 32 },
+  ]
+};
+
+const PRESS_CFG = {
+  A: { dn: 84, wp: 0.6, defTime: 8.0 },
+  B: { dn: 76, wp: 1.5, defTime: 9.0 },
+};
+
+// Состояние
+const TS = { p: null, brickId: null, n: null, t: 8.0, r: null };
+const WS = { p: null, brickId: null, n: null, w: null };
+
+// Дата сегодня (для сброса хранилища)
+const TODAY = new Date().toISOString().split('T')[0];
+
+// ============================================================
+// ХРАНИЛИЩЕ (сбрасывается при смене дня)
+// ============================================================
+function saveState() {
+  localStorage.setItem('pressCalc_v2', JSON.stringify({
+    date: TODAY,
+    ts: { p: TS.p, brickId: TS.brickId, n: TS.n, t: TS.t, r: TS.r },
+    ws: {
+      p: WS.p, brickId: WS.brickId, n: WS.n, w: WS.w,
+      ss: document.getElementById('wSS').value,
+      sn: document.getElementById('wSN').value
+    }
+  }));
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('pressCalc_v2');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.date !== TODAY) { localStorage.removeItem('pressCalc_v2'); return; }
+
+    // Восстанавливаем вкладку Время
+    const ts = data.ts;
+    if (ts.p && PRESS_CFG[ts.p]) {
+      tSP(ts.p, true);
+      if (ts.brickId) {
+        const bricks = BRICKS[ts.p];
+        const found = bricks.find(b => b.id === ts.brickId);
+        if (found) { TS.brickId = ts.brickId; highlightBrickBtns('t', ts.brickId); updatePressStats('t'); }
+      }
+      if (ts.n) { TS.n = ts.n; document.getElementById('tNI').value = ts.n; highlightNormBtns('tNP', ts.n); tWU(); }
+      if (ts.t) { TS.t = ts.t; document.getElementById('tTI').value = ts.t.toFixed(1); document.getElementById('tTR').value = Math.round(ts.t * 10); highlightTpBtns(ts.t); }
+      if (ts.r !== null && ts.r !== undefined) { TS.r = ts.r; document.getElementById('tRI').value = ts.r; highlightNormBtns('tRP', ts.r, '.pb.bl'); }
+      tCalc(); seCalc();
+    }
+
+    // Восстанавливаем вкладку Отвал
+    const ws = data.ws;
+    if (ws.p && PRESS_CFG[ws.p]) {
+      wSP(ws.p, true);
+      if (ws.brickId) {
+        const bricks = BRICKS[ws.p];
+        const found = bricks.find(b => b.id === ws.brickId);
+        if (found) { WS.brickId = ws.brickId; highlightBrickBtns('w', ws.brickId); updatePressStats('w'); }
+      }
+      if (ws.n) { WS.n = ws.n; document.getElementById('wNI').value = ws.n; highlightNormBtns('wNP', ws.n); }
+      if (ws.w !== null && ws.w !== undefined) { WS.w = ws.w; document.getElementById('wWI').value = ws.w; highlightNormBtns('wWP', ws.w, '.pb.bl'); }
+      if (ws.ss) document.getElementById('wSS').value = ws.ss;
+      if (ws.sn) document.getElementById('wSN').value = ws.sn;
+      wCalc();
+    }
+  } catch(e) {}
+}
+
+// ============================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================
+function hm(m) {
+  const h = Math.floor(m / 60), mm = Math.round(m % 60);
+  return h && mm ? h + ' ч ' + mm + ' мин' : h ? h + ' ч' : mm + ' мин';
+}
+
+function msk() {
+  try {
+    const d = new Date();
+    const s = d.toLocaleString('en-US', { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit', hour12: false });
+    const [h, m] = s.split(':');
+    return String(parseInt(h)).padStart(2, '0') + ':' + m.padStart(2, '0');
+  } catch(e) {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+}
+
+function addMinutes(timeStr, mins) {
+  const [h, mn] = timeStr.split(':').map(Number);
+  const t = h * 60 + mn + Math.round(mins);
+  return String(Math.floor(t / 60) % 24).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+}
+
+function mk(cls, txt) {
+  const b = document.createElement('button');
+  b.className = cls;
+  b.textContent = txt;
+  return b;
+}
+
+function getCurBrick(tab) {
+  const s = tab === 'T' ? TS : WS;
+  if (!s.p) return null;
+  const bricks = BRICKS[s.p];
+  return bricks.find(b => b.id === s.brickId) || bricks[0];
+}
+
+function highlightBrickBtns(tab, brickId) {
+  const container = document.getElementById(tab + 'BrickBtns');
+  if (!container) return;
+  container.querySelectorAll('.pb').forEach(b => b.classList.toggle('active', b.dataset.bid === brickId));
+}
+
+function highlightNormBtns(containerId, val, sel) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const btns = sel ? container.querySelectorAll(sel) : container.querySelectorAll('.pb');
+  btns.forEach(b => b.classList.toggle('active', +b.dataset.v === +val));
+}
+
+function highlightTpBtns(val) {
+  document.querySelectorAll('#tTP .tp').forEach(b => b.classList.toggle('active', parseFloat(b.textContent) === val));
+}
+
+function updatePressStats(tab) {
+  const s = tab === 't' ? TS : WS;
+  if (!s.p) return;
+  const brick = getCurBrick(tab === 't' ? 'T' : 'W');
+  if (!brick) return;
+  document.getElementById(tab + 'BrickLabel' + s.p).textContent = brick.name;
+  document.getElementById(tab + 'Ppw' + s.p).textContent = brick.ppw;
+}
+
+function switchTab(n) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', ['time', 'waste'][i] === n));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + n).classList.add('active');
+  if (n === 'waste') {
+    if (TS.p && !WS.p) { wSP(TS.p, true); if (TS.n) { WS.n = TS.n; document.getElementById('wNI').value = TS.n; highlightNormBtns('wNP', TS.n); } }
+  }
+}
+
+// ============================================================
+// TAB ВРЕМЯ
+// ============================================================
+function tSP(p, silent) {
+  TS.p = p;
+  document.getElementById('tBtnA').classList.toggle('active', p === 'A');
+  document.getElementById('tBtnB').classList.toggle('active', p === 'B');
+  const cfg = PRESS_CFG[p];
+  // Норма по умолчанию для выбранного пресса
+  TS.n = cfg.dn;
+  document.getElementById('tNI').value = cfg.dn;
+  bTNP(p);
+  // Время по умолчанию для выбранного пресса
+  TS.t = cfg.defTime;
+  document.getElementById('tTI').value = cfg.defTime.toFixed(1);
+  document.getElementById('tTR').value = Math.round(cfg.defTime * 10);
+  highlightTpBtns(cfg.defTime);
+  // Тип кирпича
+  TS.brickId = BRICKS[p][0].id;
+  bTBrick(p);
+  tWU();
+  if (!silent) { tCalc(); seCalc(); saveState(); }
+}
+
+function bTBrick(p) {
+  const row = document.getElementById('tBrickRow');
+  const btns = document.getElementById('tBrickBtns');
+  btns.innerHTML = '';
+  BRICKS[p].forEach((b, i) => {
+    const btn = mk('pb bk' + (i === 0 ? ' active' : ''), b.name + (BRICKS[p].length > 1 ? ' (' + b.ppw + ')' : ''));
+    btn.dataset.bid = b.id;
+    btn.onclick = () => {
+      TS.brickId = b.id;
+      highlightBrickBtns('t', b.id);
+      updatePressStats('t');
+      tWU();
+      tCalc();
+      saveState();
+    };
+    btns.appendChild(btn);
+  });
+  TS.brickId = BRICKS[p][0].id;
+  updatePressStats('t');
+  row.style.display = BRICKS[p].length > 1 ? 'block' : 'block';
+}
+
+function bTNP(p) {
+  const cfg = PRESS_CFG[p];
+  const def = cfg.dn;
+  const vals = p === 'A' ? [60, 70, 80, 84, 90, 100] : [55, 64, 72, 76, 80, 90];
+  const w = document.getElementById('tNP');
+  w.innerHTML = '';
+  vals.forEach(v => {
+    const b = mk('pb' + (v === def ? ' active' : ''), v);
+    b.dataset.v = v;
+    b.onclick = () => { TS.n = v; document.getElementById('tNI').value = v; highlightNormBtns('tNP', v); tWU(); tCalc(); saveState(); };
+    w.appendChild(b);
+  });
+}
+
+function onTNI() {
+  const v = +document.getElementById('tNI').value;
+  if (v > 0) { TS.n = v; highlightNormBtns('tNP', v); tWU(); tCalc(); saveState(); }
+}
+
+function tWU() {
+  if (!TS.p || !TS.n) return;
+  const p = PRESS_CFG[TS.p];
+  const brick = getCurBrick('T');
+  if (!brick) return;
+  const wc = Math.floor(brick.ppw * TS.n / 100 * p.wp);
+  const b = document.getElementById('tWB');
+  b.classList.add('on');
+  document.getElementById('tWM').innerHTML = 'Отвал ' + p.wp + '% → <b>' + wc + '</b> прессований';
+  document.getElementById('tWS').textContent = brick.ppw + ' × ' + TS.n + ' ÷ 100 × ' + p.wp + ' = ' + (brick.ppw * TS.n / 100 * p.wp).toFixed(2) + ' → ' + wc;
+}
+
+function bTTP() {
+  const vals = [5, 6, 7, 8, 8.5, 9, 9.5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 25, 30];
+  const w = document.getElementById('tTP');
+  w.innerHTML = '';
+  vals.forEach(v => {
+    const b = mk('tp' + (v === 8 ? ' active' : ''), v % 1 === 0 ? v.toFixed(0) : v.toFixed(1));
+    b.onclick = () => sTT(v);
+    w.appendChild(b);
+  });
+}
+
+function sTT(v) {
+  TS.t = v;
+  document.getElementById('tTI').value = v % 1 === 0 ? v.toFixed(1) : v.toFixed(1);
+  document.getElementById('tTR').value = Math.round(v * 10);
+  highlightTpBtns(v);
+  tCalc(); seCalc(); saveState();
+}
+
+function onTTI() {
+  const v = parseFloat(document.getElementById('tTI').value);
+  if (!isNaN(v) && v >= 5 && v <= 30) { TS.t = v; document.getElementById('tTR').value = Math.round(v * 10); highlightTpBtns(v); tCalc(); seCalc(); saveState(); }
+}
+
+function onTTR() {
+  const v = +document.getElementById('tTR').value / 10;
+  TS.t = v;
+  document.getElementById('tTI').value = v.toFixed(1);
+  highlightTpBtns(v);
+  tCalc(); seCalc(); saveState();
+}
+
+function bTRP() {
+  const w = document.getElementById('tRP');
+  [10, 20, 30, 40, 50, 60, 72, 76, 80, 84].forEach(v => {
+    const b = mk('pb bl', v);
+    b.dataset.v = v;
+    b.onclick = () => { TS.r = v; document.getElementById('tRI').value = v; highlightNormBtns('tRP', v, null); tCalc(); seCalc(); saveState(); };
+    w.appendChild(b);
+  });
+}
+
+function onTRI() {
+  const v = +document.getElementById('tRI').value;
+  if (!isNaN(v) && v >= 0) { TS.r = v; highlightNormBtns('tRP', v, null); tCalc(); seCalc(); saveState(); }
+}
+
+function tCalc() {
+  if (!TS.p || !TS.n || TS.r === null || TS.r === undefined || !TS.t) {
+    document.getElementById('tRC').classList.remove('on');
+    return;
+  }
+  const tot = TS.t * TS.r;
+  const hV = Math.floor(tot / 60), mV = Math.round(tot % 60);
+  document.getElementById('tRT').textContent = hm(tot);
+  document.getElementById('tRS').textContent = TS.t.toFixed(1) + ' мин × ' + TS.r + ' ваг';
+  document.getElementById('tRF').innerHTML = '<b>' + TS.t.toFixed(1) + '</b> × <b>' + TS.r + '</b> ÷ <b>60</b> = <b>' + (tot / 60).toFixed(3) + '</b> ч = <b>' + hV + ' ч ' + mV + ' мин</b>';
+  document.getElementById('tRC').classList.add('on');
+  seCalc();
+}
+
+function seCalc() {
+  const r = document.getElementById('seR');
+  if (TS.r === null || TS.r === undefined || !TS.t) { r.classList.remove('on'); return; }
+  const tot = TS.t * TS.r;
+  const now = msk();
+  const finTime = addMinutes(now, tot);
+  document.getElementById('seET').textContent = finTime;
+  document.getElementById('seES').textContent = 'сейчас МСК ' + now + ' · ещё ' + hm(tot);
+  r.classList.add('on');
+}
+
+// ============================================================
+// СЕКУНДОМЕР
+// ============================================================
+let swMs = 0, swRun = false, swIv = null;
+
+function swTick() {
+  swMs += 100;
+  const t = swMs / 1000, m = Math.floor(t / 60), s = Math.floor(t % 60), d = Math.floor((swMs % 1000) / 100);
+  document.getElementById('swD').textContent = m + ':' + String(s).padStart(2, '0') + '.' + d;
+}
+
+function swTog() {
+  if (!swRun) {
+    swRun = true; swIv = setInterval(swTick, 100);
+    document.getElementById('swB').textContent = 'СТОП';
+    document.getElementById('swB').className = 'sw-btn stop';
+    document.getElementById('swD').classList.add('run');
+    document.getElementById('swR').classList.remove('on');
+  } else {
+    clearInterval(swIv); swRun = false;
+    document.getElementById('swB').textContent = 'СТАРТ';
+    document.getElementById('swB').className = 'sw-btn go';
+    document.getElementById('swD').classList.remove('run');
+    const ts = swMs / 1000, mins = Math.floor(ts / 60), secs = Math.round(ts % 60);
+    document.getElementById('swEm').value = mins;
+    document.getElementById('swEs').value = secs;
+    swUpdatePreview();
+    document.getElementById('swR').classList.add('on');
+  }
+}
+
+function swUpdatePreview() {
+  const m = parseInt(document.getElementById('swEm').value) || 0;
+  const s = parseInt(document.getElementById('swEs').value) || 0;
+  const dec = parseFloat((m + s / 60).toFixed(1));
+  document.getElementById('swPrev').textContent = dec + ' мин';
+}
+
+function swApply() {
+  const m = parseInt(document.getElementById('swEm').value) || 0;
+  const s = parseInt(document.getElementById('swEs').value) || 0;
+  const dec = parseFloat((m + s / 60).toFixed(1));
+  const clamped = Math.min(30, Math.max(5, dec));
+  sTT(clamped);
+  document.getElementById('swR').classList.remove('on');
+  swRst();
+}
+
+function swRst() {
+  clearInterval(swIv); swRun = false; swMs = 0;
+  document.getElementById('swD').textContent = '0:00.0';
+  document.getElementById('swD').classList.remove('run');
+  document.getElementById('swB').textContent = 'СТАРТ';
+  document.getElementById('swB').className = 'sw-btn go';
+  document.getElementById('swR').classList.remove('on');
+}
+
+// ============================================================
+// TAB ОТВАЛ
+// ============================================================
+function wSP(p, silent) {
+  WS.p = p;
+  document.getElementById('wBtnA').classList.toggle('active', p === 'A');
+  document.getElementById('wBtnB').classList.toggle('active', p === 'B');
+  const cfg = PRESS_CFG[p];
+  WS.n = cfg.dn;
+  document.getElementById('wNI').value = cfg.dn;
+  bWNP(p);
+  bWBrick(p);
+  bWWP(p);
+  if (!silent) { wCalc(); saveState(); }
+}
+
+function bWBrick(p) {
+  const row = document.getElementById('wBrickRow');
+  const btns = document.getElementById('wBrickBtns');
+  btns.innerHTML = '';
+  BRICKS[p].forEach((b, i) => {
+    const btn = mk('pb bk' + (i === 0 ? ' active' : ''), b.name + (BRICKS[p].length > 1 ? ' (' + b.ppw + ')' : ''));
+    btn.dataset.bid = b.id;
+    btn.onclick = () => {
+      WS.brickId = b.id;
+      highlightBrickBtns('w', b.id);
+      updatePressStats('w');
+      wCalc();
+      saveState();
+    };
+    btns.appendChild(btn);
+  });
+  WS.brickId = BRICKS[p][0].id;
+  updatePressStats('w');
+  row.style.display = 'block';
+}
+
+function bWNP(p) {
+  const cfg = PRESS_CFG[p];
+  const def = cfg.dn;
+  const vals = p === 'A' ? [60, 70, 80, 84, 90, 100] : [55, 64, 72, 76, 80, 90];
+  const w = document.getElementById('wNP');
+  w.innerHTML = '';
+  vals.forEach(v => {
+    const b = mk('pb' + (v === def ? ' active' : ''), v);
+    b.dataset.v = v;
+    b.onclick = () => { WS.n = v; document.getElementById('wNI').value = v; highlightNormBtns('wNP', v); wCalc(); saveState(); };
+    w.appendChild(b);
+  });
+}
+
+function onWNI() {
+  const v = +document.getElementById('wNI').value;
+  if (v > 0) { WS.n = v; highlightNormBtns('wNP', v); wCalc(); saveState(); }
+}
+
+function bWWP(p) {
+  const w = document.getElementById('wWP');
+  w.innerHTML = '';
+  const vals = p === 'A' ? [10, 20, 30, 40, 50, 60, 70, 80, 84] : [10, 20, 30, 40, 50, 60, 72, 76];
+  vals.forEach(v => {
+    const b = mk('pb bl', v);
+    b.dataset.v = v;
+    b.onclick = () => { WS.w = v; document.getElementById('wWI').value = v; highlightNormBtns('wWP', v, null); wCalc(); saveState(); };
+    w.appendChild(b);
+  });
+}
+
+function onWWI() {
+  const v = +document.getElementById('wWI').value;
+  if (!isNaN(v) && v >= 0) { WS.w = v; highlightNormBtns('wWP', v, null); wCalc(); saveState(); }
+}
+
+function wCalc() {
+  const r = document.getElementById('wRes');
+  if (!WS.p || !WS.n) { r.style.display = 'none'; return; }
+  const brick = getCurBrick('W');
+  if (!brick) { r.style.display = 'none'; return; }
+  const cfg = PRESS_CFG[WS.p];
+  const startV = parseInt(document.getElementById('wSS').value);
+  const nowV = parseInt(document.getElementById('wSN').value);
+  const wg = WS.w || 0;
+  if (isNaN(startV) || isNaN(nowV)) { r.style.display = 'none'; return; }
+  const totalDiff = nowV - startV;
+  const onWagons = wg * brick.ppw;
+  const used = totalDiff - onWagons;
+  const normW = Math.floor(brick.ppw * WS.n / 100 * cfg.wp);
+  const left = normW - used;
+  const pct = normW > 0 ? Math.min(200, Math.round(used / normW * 100)) : 0;
+  const over = used > normW;
+  r.style.display = 'block';
+  document.getElementById('wRU').textContent = used < 0 ? 0 : used;
+  document.getElementById('wRU').className = 'wt-v ' + (over ? 'cr' : 'cu');
+  document.getElementById('wRN').textContent = normW;
+  document.getElementById('wRL').textContent = Math.abs(left);
+  document.getElementById('wRL').className = 'wt-v ' + (over ? 'cr' : 'co');
+  document.getElementById('wRLS').textContent = over ? '⚠ ПЕРЕРАСХОД' : 'ещё можно';
+  document.getElementById('wRP').textContent = pct + '%';
+  document.getElementById('wRP').className = 'wt-v ' + (over ? 'cr' : pct > 80 ? 'cu' : 'co');
+  const bar = document.getElementById('wRB');
+  bar.style.width = Math.min(100, pct) + '%';
+  bar.className = 'pb2' + (over ? ' ov' : '');
+  const w2 = document.getElementById('wRW');
+  if (over) {
+    w2.className = 'wb2 bad on';
+    w2.innerHTML = '⚠ Отвал превышен на <b>' + (used - normW) + '</b> ходов! Норма: ' + normW + ', использовано: ' + used + '.';
+  } else if (pct >= 80) {
+    w2.className = 'wb2 mid on';
+    w2.innerHTML = '⚡ Использовано ' + pct + '% отвала (' + used + ' из ' + normW + '). Осталось: ' + left + ' ходов.';
+  } else {
+    w2.className = 'wb2 ok on';
+    w2.innerHTML = '✓ В норме. Использовано <b>' + used + '</b> из <b>' + normW + '</b> (' + pct + '%). Остаток: <b>' + left + '</b> ходов.';
+  }
+  document.getElementById('wWN').textContent = wg > 0 ? wg + ' ваг × ' + brick.ppw + ' = ' + onWagons + ' ходов на вагонетки' : '';
+  document.getElementById('wRF').innerHTML =
+    'Всего ходов: <b>' + nowV.toLocaleString() + '</b> − <b>' + startV.toLocaleString() + '</b> = <b>' + totalDiff + '</b><br>' +
+    'На вагонетки: <b>' + wg + '</b> × <b>' + brick.ppw + '</b> = <b>' + onWagons + '</b><br>' +
+    'В отвал: <b>' + totalDiff + '</b> − <b>' + onWagons + '</b> = <b>' + used + '</b><br>' +
+    'Норма отвала: <b>' + brick.ppw + '</b> × <b>' + WS.n + '</b> ÷ 100 × <b>' + cfg.wp + '</b> = <b>' + normW + '</b><br>' +
+    'Остаток: <b>' + normW + '</b> − <b>' + used + '</b> = <b>' + left + '</b>';
+}
+
+// ============================================================
+// PWA: МАНИФЕСТ И ИКОНКА
+// ============================================================
+(function() {
+  const iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="72" fill="#ffffff"/><text x="256" y="330" font-family="Arial Black,Arial,sans-serif" font-size="190" font-weight="900" text-anchor="middle" fill="#cc1111">Press</text></svg>`;
+  const iconUrl = 'data:image/svg+xml,' + encodeURIComponent(iconSVG);
+  document.getElementById('ati').href = iconUrl;
+  const manifest = {
+    name: 'Пресс Калькулятор',
+    short_name: 'Пресс',
+    description: 'Расчёт времени печати и отвала для пресса',
+    start_url: './',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#111210',
+    theme_color: '#111210',
+    icons: [
+      { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+    ]
+  };
+  const manifestUrl = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
+  document.getElementById('mfst').href = manifestUrl;
+})();
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+bTTP();
+bTRP();
+loadState();
+
+// Автообновление "во сколько закончим" каждую минуту
+setInterval(seCalc, 60000);
+</script>
+</body>
+</html>
