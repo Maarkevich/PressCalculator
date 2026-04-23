@@ -70,22 +70,28 @@
       </div>
 
       <div class="card results-card">
-        <div class="card-body">
-          <label class="field-label">Осталось напечатать вагонеток</label>
-          <input type="number" id="inp-remaining" class="input-field" min="0" placeholder="Напр., 12" inputmode="numeric">
-          
-          <div class="calc-results mt-10">
-            <div class="calc-row">
-              <span>Время на остаток:</span>
-              <strong id="res-total-time">—</strong>
-            </div>
-            <div class="calc-row">
-              <span>Закончим смену в:</span>
-              <strong id="res-eta">—</strong>
-            </div>
-          </div>
-        </div>
+  <div class="results-header">
+    <span class="results-icon">📊</span>
+    <span class="results-title">Прогноз смены</span>
+  </div>
+  <div class="card-body">
+    <label class="field-label">Осталось напечатать вагонеток</label>
+    <input type="number" id="inp-remaining" class="input-field input-lg" min="0" placeholder="Напр., 12" inputmode="numeric">
+    
+    <div class="forecast-grid mt-12">
+      <div class="forecast-box">
+        <div class="forecast-icon">⏳</div>
+        <div class="forecast-value" id="res-total-time">—</div>
+        <div class="forecast-label">Время на остаток</div>
       </div>
+      <div class="forecast-box">
+        <div class="forecast-icon">🏁</div>
+        <div class="forecast-value" id="res-eta">—</div>
+        <div class="forecast-label">Закончим смену в</div>
+      </div>
+    </div>
+  </div>
+</div>
     </section>
 
     <!-- ВКЛАДКА: ОТВАЛ & КОНТРОЛЬ -->
