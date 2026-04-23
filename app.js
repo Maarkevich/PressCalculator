@@ -1,263 +1,252 @@
-// ─── КОНФИГ: ПРЕССЫ И КИРПИЧ (МЕНЯТЬ ТОЛЬКО ЗДЕСЬ) ───────────────────────────
-export const PRESS_CONFIG = {
-  A: { name: 'КСУРПо', strokesPerWagon: 36, wasteNormPercent: 0.6 },
-  B: { name: 'СКРпу', strokesPerWagon: 32, wasteNormPercent: 1.5 }
-};
-
-// 📌 Чтобы добавить новый тип кирпича, просто добавьте строку в объект:
-// 'short_code': { name: 'Название', piecesPerWagon: Количество }
+// ─── КОНФИГ: ПРЕССЫ И КИРПИЧ ───────────────────────────────────────────────
+// 📌 Чтобы добавить тип кирпича, просто вставьте объект в массив нужного пресса:
+// { id: 'unique_id', name: 'Название', pieces: кол-во, strokes: кол-во }
 export const BRICK_TYPES = {
-  'std': { name: 'Одинарный (1НФ)', piecesPerWagon: 200 },
-  'thk': { name: 'Утолщённый (1.4НФ)', piecesPerWagon: 144 },
-  'blk': { name: 'Блок строительный', piecesPerWagon: 60 },
-  'custom': { name: 'Другой (настрой в коде)', piecesPerWagon: 250 }
+  A: [
+    { id: 'a_ksurpo', name: 'КСУРПо (720 шт)', pieces: 720, strokes: 36 }
+  ],
+  B: [
+    { id: 'b_skrpu', name: 'СКРпу (448 шт)', pieces: 448, strokes: 32 }
+  ]
 };
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'press_calc_state_v1';
+const PRESS_CONFIG = {
+  A: { wasteNorm: 0.6 },
+  B: { wasteNorm: 1.5 }
+};
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'press_calc_state_v2';
 const state = {
   press: 'A',
-  brick: 'std',
-  targetWagons: '',
-  timePerWagonMs: 0, // миллисекунды на одну вагонетку
+  brickId: 'a_ksurpo',
+  timePerWagonMin: 0,
+  remainingWagons: '',
   wasteStart: '',
   wasteCurrent: '',
   producedWagons: '',
-  // Секундомер
   swRunning: false,
   swStartTime: 0,
   swElapsed: 0
 };
 
-// ─── DOM CACHE ───────────────────────────────────────────────────────────────
+// ─── DOM CACHE ────────────────────────────────────────────────────────────
 const $ = (sel) => document.querySelector(sel);
 const els = {
-  selPress: $('#sel-press'), selBrick: $('#sel-brick'),
-  inpTarget: $('#inp-target'), inpProduced: $('#inp-produced'),
-  inpWasteStart: $('#inp-waste-start'), inpWasteCurrent: $('#inp-waste-current'),
+  pressBtnsTime: document.querySelectorAll('#panel-time .press-btn'),
+  pressBtnsWaste: document.querySelectorAll('#panel-waste .press-btn'),
+  selBrickTime: $('#sel-brick-time'), selBrickWaste: $('#sel-brick-waste'),
+  inpTime: $('#inp-time'), inpRemaining: $('#inp-remaining'),
+  inpWasteStart: $('#inp-waste-start'), inpWasteCurrent: $('#inp-waste-current'), inpProduced: $('#inp-produced'),
   btnSwAction: $('#btn-sw-action'), btnSwClear: $('#btn-sw-clear'), btnSwApply: $('#btn-sw-apply'),
   swDisplay: $('.sw-display'), swDecimal: $('.sw-decimal'),
-  resRemaining: $('#res-remaining'), resEta: $('#res-eta'), resStatus: $('#res-status'),
-  infoStrokes: $('#info-strokes'), infoPieces: $('#info-pieces'), infoWasteLimit: $('#info-waste-limit'),
+  resTotalTime: $('#res-total-time'), resEta: $('#res-eta'),
+  infoPieces: $('#info-pieces'), infoStrokes: $('#info-strokes'), infoWasteLimit: $('#info-waste-limit'),
   resWasteUsed: $('#res-waste-used'), resWasteLeft: $('#res-waste-left'),
-  progWagons: $('#prog-wagons'), progWagonsText: $('#prog-wagons-text'),
-  progWaste: $('#prog-waste'), progWasteText: $('#prog-waste-text'),
-  progWagonsFill: $('#prog-wagons .progress-fill'),
-  progWasteFill: $('#prog-waste .progress-fill')
+  progWasteFill: $('#prog-waste .progress-fill'), progWasteText: $('#prog-waste-text'),
+  fabNewShift: $('#btn-new-shift')
 };
 
-// ─── УТИЛИТЫ ─────────────────────────────────────────────────────────────────
-export function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
-}
+// ─── УТИЛИТЫ ─────────────────────────────────────────────────────────────
+export function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {} }
 export function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) Object.assign(state, JSON.parse(raw));
-  } catch {}
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
 }
-export function vibrate(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
-export function formatMs(ms) {
-  const min = Math.floor(ms / 60000);
-  const sec = Math.floor((ms % 60000) / 1000);
-  const ds = Math.floor((ms % 1000) / 100);
-  return `${min}:${sec.toString().padStart(2,'0')}.${ds}`;
+export function vibrate(p) { if (navigator.vibrate) navigator.vibrate(p); }
+export function formatTime(ms) {
+  const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000), ds = Math.floor((ms % 1000) / 100);
+  return `${m}:${s.toString().padStart(2,'0')}.${ds}`;
 }
-export function msToDecimal(ms) { return (ms / 60000).toFixed(2); }
 
-// ─── СЕКУНДОМЕР (УСТОЙЧИВ К БЛОКИРОВКЕ ЭКРАНА) ──────────────────────────────
+// ─── СЕКУНДОМЕР (УСТОЙЧИВ К БЛОКИРОВКЕ) ──────────────────────────────────
 let swInterval;
 function startSw() {
-  state.swStartTime = performance.now();
+  state.swStartTime = Date.now() - state.swElapsed;
   state.swRunning = true;
-  updateSwUI();
   vibrate([30]);
   swInterval = setInterval(updateSwUI, 50);
 }
 function pauseSw() {
-  state.swElapsed += performance.now() - state.swStartTime;
+  state.swElapsed = Date.now() - state.swStartTime;
   state.swRunning = false;
   clearInterval(swInterval);
-  updateSwUI();
 }
 function stopSw() {
-  state.swElapsed += performance.now() - state.swStartTime;
+  state.swElapsed = Date.now() - state.swStartTime;
   state.swRunning = false;
   clearInterval(swInterval);
-  state.timePerWagonMs = state.swElapsed;
   vibrate([30, 20, 30]);
-  updateSwUI();
-  renderResults();
 }
 function resetSw() {
-  pauseSw();
-  state.swElapsed = 0;
-  state.swStartTime = 0;
-  state.swRunning = false;
-  updateSwUI();
+  pauseSw(); state.swElapsed = 0; updateSwUI();
 }
 function updateSwUI() {
-  const now = state.swRunning ? performance.now() : 0;
-  const total = state.swElapsed + (state.swRunning ? (now - state.swStartTime) : 0);
-  els.swDisplay.textContent = formatMs(total);
-  els.swDecimal.textContent = `${msToDecimal(total)} мин`;
+  const total = state.swRunning ? (Date.now() - state.swStartTime) : state.swElapsed;
+  els.swDisplay.textContent = formatTime(total);
+  els.swDecimal.textContent = `${(total / 60000).toFixed(2)} мин`;
 
-  // Логика кнопок
   if (!state.swRunning && total === 0) {
-    els.btnSwAction.textContent = '▶ СТАРТ';
-    els.btnSwAction.className = 'btn-primary sw-btn-start';
-    els.btnSwClear.textContent = '🔄 СБРОС';
+    els.btnSwAction.textContent = '▶ СТАРТ'; els.btnSwAction.className = 'btn-sw-start';
+    els.btnSwClear.textContent = '🔄 СБРОС'; els.btnSwClear.className = 'btn-sw-reset';
     els.btnSwApply.disabled = true;
   } else if (state.swRunning) {
-    els.btnSwAction.textContent = '⏸ ПАУЗА';
-    els.btnSwAction.className = 'btn-secondary sw-btn-pause';
-    els.btnSwClear.textContent = '⏹ СТОП';
-    els.btnSwClear.className = 'btn-primary sw-btn-stop';
+    els.btnSwAction.textContent = '⏸ ПАУЗА'; els.btnSwAction.className = 'btn-sw-pause';
+    els.btnSwClear.textContent = '⏹ СТОП'; els.btnSwClear.className = 'btn-sw-start';
     els.btnSwApply.disabled = false;
   } else {
-    els.btnSwAction.textContent = '▶ СТАРТ';
-    els.btnSwAction.className = 'btn-primary sw-btn-start';
-    els.btnSwClear.textContent = '🔄 СБРОС';
-    els.btnSwClear.className = 'btn-secondary sw-btn-reset';
+    els.btnSwAction.textContent = '▶ СТАРТ'; els.btnSwAction.className = 'btn-sw-start';
+    els.btnSwClear.textContent = '🔄 СБРОС'; els.btnSwClear.className = 'btn-sw-reset';
     els.btnSwApply.disabled = false;
   }
 }
 
-// ─── РАСЧЁТЫ И РЕНДЕР ────────────────────────────────────────────────────────
-function getWasteLimit() {
-  const cfg = PRESS_CONFIG[state.press];
-  // Отвал в ходах = ходов на ваг * (норма % / 100)
-  return Math.ceil(cfg.strokesPerWagon * (cfg.wasteNormPercent / 100));
+// ─── ЛОГИКА И РЕНДЕР ─────────────────────────────────────────────────────
+function syncPressUI() {
+  [...els.pressBtnsTime, ...els.pressBtnsWaste].forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.press === state.press);
+  });
+  populateBrickSelect(els.selBrickTime, state.press);
+  populateBrickSelect(els.selBrickWaste, state.press);
+  els.selBrickTime.value = state.brickId;
+  els.selBrickWaste.value = state.brickId;
+  updateInfo();
+  calcResults();
 }
 
-function updateConfigUI() {
-  const p = PRESS_CONFIG[state.press];
-  const b = BRICK_TYPES[state.brick];
-  const limit = getWasteLimit();
-  
-  els.infoStrokes.textContent = p.strokesPerWagon;
-  els.infoPieces.textContent = b.piecesPerWagon;
+function populateBrickSelect(select, press) {
+  select.innerHTML = BRICK_TYPES[press].map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+}
+
+function getBrick() { return BRICK_TYPES[state.press].find(b => b.id === state.brickId) || BRICK_TYPES[state.press][0]; }
+
+function updateInfo() {
+  const b = getBrick();
+  els.infoPieces.textContent = b.pieces;
+  els.infoStrokes.textContent = b.strokes;
+  const limit = Math.ceil(b.strokes * (PRESS_CONFIG[state.press].wasteNorm / 100));
   els.infoWasteLimit.textContent = limit;
+  return limit;
 }
 
-function renderResults() {
-  const target = parseInt(state.targetWagon) || 0;
-  const produced = parseInt(state.producedWagons) || 0;
-  const timePerWagonMin = state.timePerWagonMs / 60000;
-
-  // Прогноз времени
-  if (target > 0 && timePerWagonMin > 0 && produced <= target) {
-    const remaining = Math.max(0, target - produced);
-    const minsLeft = remaining * timePerWagonMin;
-    const eta = new Date(Date.now() + minsLeft * 60000);
+function calcResults() {
+  // Время & Прогноз
+  const time = parseFloat(state.timePerWagonMin) || 0;
+  const rem = parseInt(state.remainingWagons) || 0;
+  
+  if (time > 0 && rem > 0) {
+    const totalMin = time * rem;
+    const h = Math.floor(totalMin / 60), m = Math.round(totalMin % 60);
+    els.resTotalTime.textContent = `${h}ч ${m}м`;
     
-    els.resRemaining.textContent = remaining;
+    const eta = new Date(Date.now() + totalMin * 60000);
     els.resEta.textContent = `${eta.getHours().toString().padStart(2,'0')}:${eta.getMinutes().toString().padStart(2,'0')}`;
-    els.resStatus.textContent = 'В работе';
-    els.resStatus.className = 'badge';
-
-    const pct = Math.min(100, (produced / target) * 100);
-    els.progWagonsFill.style.width = `${pct}%`;
-    els.progWagonsFill.classList.remove('warn');
-    if (pct > 90) els.progWagonsFill.classList.add('warn');
-    els.progWagonsText.textContent = `${Math.round(pct)}%`;
   } else {
-    els.resRemaining.textContent = '—';
-    els.resEta.textContent = '—';
-    els.resStatus.textContent = produced >= target ? '✅ Норма выполнена' : '⏳ Введите данные';
-    els.progWagonsFill.style.width = '0%';
-    els.progWagonsText.textContent = '0%';
+    els.resTotalTime.textContent = '—'; els.resEta.textContent = '—';
   }
 
   // Отвал
-  const wasteStart = parseInt(state.wasteStart) || 0;
-  const wasteCurr = parseInt(state.wasteCurrent) || 0;
-  const limit = getWasteLimit();
-  const used = wasteStart + wasteCurr;
+  const start = parseInt(state.wasteStart) || 0;
+  const curr = parseInt(state.wasteCurrent) || 0;
+  const limit = updateInfo();
+  const used = start + curr;
   const left = Math.max(0, limit - used);
-  const pctUsed = limit > 0 ? (used / limit) * 100 : 0;
+  const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
 
   els.resWasteUsed.textContent = used;
   els.resWasteLeft.textContent = left;
-  els.progWasteFill.style.width = `${Math.min(100, pctUsed)}%`;
-  els.progWasteText.textContent = `${pctUsed.toFixed(1)}%`;
-  
-  if (pctUsed > 95) {
-    els.progWasteFill.classList.add('warn');
-    els.resWasteUsed.style.color = 'var(--danger)';
-  } else {
-    els.progWasteFill.classList.remove('warn');
-    els.resWasteUsed.style.color = 'var(--text)';
-  }
+  els.progWasteFill.style.width = `${pct}%`;
+  els.progWasteText.textContent = `${pct.toFixed(1)}%`;
+  els.progWasteFill.classList.toggle('warn', pct > 95);
 
   saveState();
 }
 
-// ─── ИНИЦИАЛИЗАЦИЯ ───────────────────────────────────────────────────────────
-export function init() {
-  // Заполняем селектор кирпичей
-  els.selBrick.innerHTML = Object.entries(BRICK_TYPES)
-    .map(([k, v]) => `<option value="${k}">${v.name} · ${v.piecesPerWagon} шт/ваг</option>`).join('');
-
-  // Восстановление состояния
+// ─── ИНИЦИАЛИЗАЦИЯ ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
   loadState();
-  els.selPress.value = state.press;
-  els.selBrick.value = state.brick;
-  els.inpTarget.value = state.targetWagons;
-  els.inpProduced.value = state.producedWagons;
+  syncPressUI();
+  updateSwUI();
+  els.inpTime.value = state.timePerWagonMin || '';
+  els.inpRemaining.value = state.remainingWagons;
   els.inpWasteStart.value = state.wasteStart;
   els.inpWasteCurrent.value = state.wasteCurrent;
+  els.inpProduced.value = state.producedWagons;
 
-  updateConfigUI();
-  renderResults();
-  updateSwUI();
+  // Пресс кнопки
+  const handlePress = (e) => {
+    const press = e.currentTarget.dataset.press;
+    if (press === state.press) return;
+    state.press = press;
+    state.brickId = BRICK_TYPES[press][0].id;
+    syncPressUI();
+  };
+  els.pressBtnsTime.forEach(b => b.addEventListener('click', handlePress));
+  els.pressBtnsWaste.forEach(b => b.addEventListener('click', handlePress));
 
-  // Обработчики
-  els.selPress.addEventListener('change', e => { state.press = e.target.value; updateConfigUI(); renderResults(); });
-  els.selBrick.addEventListener('change', e => { state.brick = e.target.value; updateConfigUI(); renderResults(); });
-  
-  [els.inpTarget, els.inpProduced, els.inpWasteStart, els.inpWasteCurrent].forEach(inp => {
-    inp.addEventListener('input', e => {
-      const key = {inpTarget:'targetWagons', inpProduced:'producedWagons', inpWasteStart:'wasteStart', inpWasteCurrent:'wasteCurrent'}[e.target.id];
-      state[key] = e.target.value;
-      renderResults();
+  // Кирпич
+  [els.selBrickTime, els.selBrickWaste].forEach(sel => {
+    sel.addEventListener('change', e => { state.brickId = e.target.value; syncPressUI(); });
+  });
+
+  // Кнопки быстрого времени
+  document.querySelectorAll('.time-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const min = parseFloat(btn.dataset.min);
+      state.timePerWagonMin = min;
+      els.inpTime.value = min;
+      document.querySelectorAll('.time-btn').forEach(b => b.classList.toggle('active', b === btn));
+      calcResults();
     });
   });
 
-  els.btnSwAction.addEventListener('click', () => {
-    state.swRunning ? pauseSw() : startSw();
-  });
-  els.btnSwClear.addEventListener('click', () => {
-    state.swRunning ? stopSw() : resetSw();
-  });
-  els.btnSwApply.addEventListener('click', () => {
-    state.timePerWagonMs = state.swElapsed;
-    vibrate([20]);
-    renderResults();
+  // Ручной ввод времени
+  els.inpTime.addEventListener('input', e => {
+    state.timePerWagonMin = e.target.value;
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    calcResults();
   });
 
-  $('#btn-new-shift').addEventListener('click', () => {
-    if (confirm('Начать новую смену? Все данные будут сброшены.')) {
-      state.targetWagons = ''; state.producedWagons = ''; state.wasteStart = ''; state.wasteCurrent = '';
-      state.timePerWagonMs = 0; state.swElapsed = 0; state.swRunning = false; state.swStartTime = 0;
-      clearInterval(swInterval);
-      [els.inpTarget, els.inpProduced, els.inpWasteStart, els.inpWasteCurrent].forEach(i => i.value = '');
-      updateSwUI();
-      renderResults();
-      saveState();
-    }
+  // Остаток вагонеток
+  els.inpRemaining.addEventListener('input', e => { state.remainingWagons = e.target.value; calcResults(); });
+
+  // Отвал поля
+  [els.inpWasteStart, els.inpWasteCurrent, els.inpProduced].forEach(inp => {
+    inp.addEventListener('input', e => {
+      const key = {inpWasteStart:'wasteStart', inpWasteCurrent:'wasteCurrent', inpProduced:'producedWagons'}[e.target.id];
+      state[key] = e.target.value; calcResults();
+    });
+  });
+
+  // Секундомер
+  els.btnSwAction.addEventListener('click', () => state.swRunning ? pauseSw() : startSw());
+  els.btnSwClear.addEventListener('click', () => state.swRunning ? stopSw() : resetSw());
+  els.btnSwApply.addEventListener('click', () => {
+    state.timePerWagonMin = parseFloat((state.swElapsed / 60000).toFixed(2));
+    els.inpTime.value = state.timePerWagonMin;
+    resetSw();
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    calcResults(); vibrate([20]);
   });
 
   // Табы
   document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const target = btn.dataset.tab;
+      document.querySelectorAll('.tab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected','true');
       document.querySelectorAll('.tab-panel').forEach(p => p.hidden = true);
-      $(`#panel-${target}`).hidden = false;
+      $(`#panel-${btn.dataset.tab}`).hidden = false;
     });
   });
-}
 
-document.addEventListener('DOMContentLoaded', init);
+  // Новая смена
+  els.fabNewShift.addEventListener('click', () => {
+    if (!confirm('Начать новую смену? Все данные сброшены.')) return;
+    state.remainingWagons = ''; state.timePerWagonMin = 0;
+    state.wasteStart = ''; state.wasteCurrent = ''; state.producedWagons = '';
+    resetSw();
+    els.inpRemaining.value = ''; els.inpTime.value = '';
+    els.inpWasteStart.value = ''; els.inpWasteCurrent.value = ''; els.inpProduced.value = '';
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    calcResults(); saveState();
+  });
+});
