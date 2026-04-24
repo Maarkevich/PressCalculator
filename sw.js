@@ -1,8 +1,8 @@
 /*
-VERSION: 2.0
+VERSION: 2.1
 ⚠️ ПРИ ОБНОВЛЕНИИ УВЕЛИЧИВАЙТЕ ВЕРСИЮ
 */
-const CACHE_NAME = 'press-calc-v4.0';
+const CACHE_NAME = 'press-calc-v4.1';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', e => {

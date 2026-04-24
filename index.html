@@ -28,11 +28,11 @@
         <div class="card-body">
           <label class="field-label">Выбор пресса</label>
           <div class="press-selector">
-            <button class="press-btn active" data-press="A">
+            <button class="press-btn active sync-press" data-press="A">
               <span class="press-name">Пресс А</span>
               <span class="press-sub">отвал 0,6%</span>
             </button>
-            <button class="press-btn" data-press="B">
+            <button class="press-btn sync-press" data-press="B">
               <span class="press-name">Пресс Б</span>
               <span class="press-sub">отвал 1,5%</span>
             </button>
@@ -57,12 +57,12 @@
           <input type="number" id="inp-time" class="input-field mt-6" step="0.1" min="0.1" placeholder="Или введите своё время" inputmode="decimal">
 
           <div class="stopwatch-wrap mt-14">
-            <div class="sw-header">⏱ Секундомер (замер)</div>
+            <div class="sw-header">⏱ Точный замер вагонетки</div>
             <div class="sw-display">0:00.0</div>
             <div class="sw-decimal">0.00 мин</div>
             <div class="sw-controls">
-              <button id="btn-sw-action" class="btn-sw-start">▶ СТАРТ</button>
-              <button id="btn-sw-clear" class="btn-sw-reset">🔄 СБРОС</button>
+              <button id="btn-sw-start" class="btn-sw-start">▶ СТАРТ</button>
+              <button id="btn-sw-stop" class="btn-sw-stop" disabled>⏹ СТОП</button>
             </div>
             <button id="btn-sw-apply" class="btn-apply" disabled>✓ ПРИМЕНИТЬ ВРЕМЯ</button>
           </div>
@@ -70,37 +70,37 @@
       </div>
 
       <div class="card results-card">
-  <div class="results-header">
-    <span class="results-icon">📊</span>
-    <span class="results-title">Прогноз смены</span>
-  </div>
-  <div class="card-body">
-    <label class="field-label">Осталось напечатать вагонеток</label>
-    <input type="number" id="inp-remaining" class="input-field input-lg" min="0" placeholder="Напр., 12" inputmode="numeric">
-    
-    <div class="forecast-grid mt-12">
-      <div class="forecast-box">
-        <div class="forecast-icon">⏳</div>
-        <div class="forecast-value" id="res-total-time">—</div>
-        <div class="forecast-label">Время на остаток</div>
+        <div class="results-header">
+          <span class="results-icon">⏳</span>
+          <span class="results-title">Прогноз смены</span>
+        </div>
+        <div class="card-body">
+          <label class="field-label">Осталось напечатать вагонеток</label>
+          <input type="number" id="inp-remaining" class="input-field input-lg" min="0" placeholder="Напр., 12" inputmode="numeric">
+          
+          <div class="forecast-grid mt-12">
+            <div class="forecast-box">
+              <div class="forecast-icon">⌛</div>
+              <div class="forecast-value" id="res-total-time">—</div>
+              <div class="forecast-label">Время на остаток</div>
+            </div>
+            <div class="forecast-box">
+              <div class="forecast-icon">🏁</div>
+              <div class="forecast-value" id="res-eta">—</div>
+              <div class="forecast-label">Закончим смену в</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="forecast-box">
-        <div class="forecast-icon">🏁</div>
-        <div class="forecast-value" id="res-eta">—</div>
-        <div class="forecast-label">Закончим смену в</div>
-      </div>
-    </div>
-  </div>
-</div>
     </section>
 
     <!-- ВКЛАДКА: ОТВАЛ & КОНТРОЛЬ -->
     <section class="tab-panel" id="panel-waste" hidden>
       <div class="card">
         <div class="card-body">
-          <label class="field-label">Пресс</label>
+          <label class="field-label">Выбор пресса</label>
           <div class="press-selector">
-            <button class="press-btn sync-press active" data-press="A">
+            <button class="press-btn active sync-press" data-press="A">
               <span class="press-name">Пресс А</span>
               <span class="press-sub">отвал 0,6%</span>
             </button>
@@ -109,40 +109,52 @@
               <span class="press-sub">отвал 1,5%</span>
             </button>
           </div>
-
+          <label class="field-label mt-10">Норма вагонеток на смену</label>
+          <input type="number" id="inp-waste-target" class="input-field" min="1" placeholder="Напр., 80" inputmode="numeric">
           <label class="field-label mt-10">Тип кирпича</label>
           <select id="sel-brick-waste" class="input-select"></select>
-
-          <div class="info-grid mt-10">
-            <div class="info-item"><span>Штук/ваг:</span><strong id="info-pieces">—</strong></div>
-            <div class="info-item"><span>Ходов/ваг:</span><strong id="info-strokes">—</strong></div>
-            <div class="info-item"><span>Допустимо отвала:</span><strong id="info-waste-limit" class="text-amber">—</strong></div>
-          </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-body">
           <label class="field-label">Ходы в начале смены</label>
-          <input type="number" id="inp-waste-start" class="input-field" min="0" placeholder="0" inputmode="numeric">
-          
-          <label class="field-label mt-10">Ходы по факту (текущая)</label>
-          <input type="number" id="inp-waste-current" class="input-field" min="0" placeholder="0" inputmode="numeric">
-          
-          <label class="field-label mt-10">Напечатано вагонеток (вручную)</label>
-          <input type="number" id="inp-produced" class="input-field" min="0" placeholder="0" inputmode="numeric">
+          <input type="number" id="inp-waste-start" class="input-field" placeholder="Напр., 1224424" inputmode="numeric">
+          <label class="field-label mt-10">Ходы по факту (текущая вагонетка)</label>
+          <input type="number" id="inp-waste-current" class="input-field" placeholder="Напр., 1226342" inputmode="numeric">
+          <label class="field-label mt-10">Напечатано вагонеток вручную</label>
+          <input type="number" id="inp-waste-printed" class="input-field" placeholder="Напр., 53" inputmode="numeric">
         </div>
       </div>
 
-      <div class="card waste-result">
+      <div class="card results-card">
+        <div class="results-header">
+          <span class="results-icon">📊</span>
+          <span class="results-title">Контроль отвала</span>
+        </div>
         <div class="card-body">
-          <div class="calc-results">
-            <div class="calc-row"><span>Использовано ходов:</span><strong id="res-waste-used">0</strong></div>
-            <div class="calc-row"><span>Осталось в отвал:</span><strong id="res-waste-left">—</strong></div>
+          <div class="forecast-grid mt-10">
+            <div class="forecast-box">
+              <div class="forecast-icon">📉</div>
+              <div class="forecast-value" id="res-waste-used">0</div>
+              <div class="forecast-label">Ходов сделано</div>
+            </div>
+            <div class="forecast-box">
+              <div class="forecast-icon">📦</div>
+              <div class="forecast-value" id="res-waste-limit">—</div>
+              <div class="forecast-label">Допустимо всего</div>
+            </div>
           </div>
-          <div class="progress-wrap mt-10">
-            <div class="progress-bar waste-bar" id="prog-waste">
-              <div class="progress-fill" style="width: 0%"></div>
+          <div class="forecast-grid mt-12">
+            <div class="forecast-box highlight">
+              <div class="forecast-icon">✅</div>
+              <div class="forecast-value" id="res-waste-remaining">—</div>
+              <div class="forecast-label">Осталось в отвал</div>
+            </div>
+          </div>
+          <div class="progress-wrap mt-12">
+            <div class="progress-bar waste-bar">
+              <div class="progress-fill" id="prog-waste-fill" style="width: 0%"></div>
             </div>
             <div class="progress-label">Использовано нормы: <span id="prog-waste-text">0%</span></div>
           </div>

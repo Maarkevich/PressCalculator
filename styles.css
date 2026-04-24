@@ -39,7 +39,7 @@ body {
   background: var(--surface2); color: var(--text); font-size: 15px; font-family: inherit;
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
-.input-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='2' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+.input-select { appearance: none; background-image: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='2' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
 .input-field:focus, .input-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15); }
 .mt-6 { margin-top: 6px; } .mt-10 { margin-top: 10px; } .mt-12 { margin-top: 12px; } .mt-14 { margin-top: 14px; }
 
@@ -67,18 +67,19 @@ body {
 .sw-display { font-family: 'SF Mono', 'Roboto Mono', monospace; font-size: 36px; font-weight: 700; color: var(--text); letter-spacing: -1px; }
 .sw-decimal { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .sw-controls { display: flex; gap: 10px; margin-top: 12px; }
-.btn-sw-start, .btn-sw-pause, .btn-sw-reset, .btn-apply {
+.btn-sw-start, .btn-sw-pause, .btn-sw-stop, .btn-apply {
   flex: 1; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
   cursor: pointer; border: none; font-family: inherit; transition: all 0.15s;
 }
 .btn-sw-start { background: var(--success); color: #fff; }
 .btn-sw-pause { background: var(--warning); color: #000; }
-.btn-sw-reset { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-sw-stop { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-sw-stop:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-apply { background: var(--primary-light); color: var(--primary); margin-top: 10px; }
 .btn-apply:not(:disabled) { background: var(--success); color: #fff; }
 .btn-apply:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* 🎨 НОВЫЙ БЛОК ПРОГНОЗА */
+/* 🎨 ПРОГНОЗ & ОТВАЛ */
 .results-card { border: none; box-shadow: 0 4px 20px rgba(14, 165, 233, 0.15); }
 .results-header {
   display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px;
@@ -95,6 +96,7 @@ body {
   text-align: center; border: 1px solid var(--border);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+.forecast-box.highlight { grid-column: span 2; background: linear-gradient(135deg, var(--primary-light), var(--surface2)); border-color: var(--primary); }
 .forecast-box:active { transform: scale(0.98); }
 .forecast-icon { font-size: 24px; margin-bottom: 6px; }
 .forecast-value {
@@ -102,12 +104,6 @@ body {
   line-height: 1.1; margin-bottom: 4px; font-family: 'SF Mono', 'Roboto Mono', monospace;
 }
 .forecast-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-
-.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--surface2); padding: 10px; border-radius: 8px; }
-.info-item { text-align: center; }
-.info-item span { display: block; font-size: 11px; color: var(--text-muted); }
-.info-item strong { font-size: 14px; font-weight: 700; }
-.text-amber { color: var(--warning); }
 
 .progress-wrap { margin-top: 10px; }
 .progress-bar { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
