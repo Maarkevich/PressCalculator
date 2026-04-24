@@ -54,6 +54,11 @@ body {
 .press-btn .press-sub { font-size: 11px; color: var(--text-muted); font-weight: 500; }
 .press-btn.active .press-sub { color: var(--primary-hover); }
 
+.norm-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.norm-input { margin-bottom: 6px; }
+.norm-result { font-size: 13px; color: var(--text-muted); text-align: center; }
+.norm-result strong { color: var(--primary); font-weight: 700; }
+
 .quick-times { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .time-btn {
   padding: 8px; border: 1.5px solid var(--border); border-radius: 8px;

@@ -38,6 +38,12 @@
             </button>
           </div>
 
+          <div class="norm-box mt-10">
+            <label class="field-label">Норма вагонеток на смену</label>
+            <input type="number" id="inp-norm-time" class="input-field norm-input" min="1" placeholder="84" inputmode="numeric">
+            <div class="norm-result">Допустимо в отвал: <strong id="res-waste-allow-time">—</strong></div>
+          </div>
+
           <label class="field-label mt-10">Тип кирпича</label>
           <select id="sel-brick-time" class="input-select"></select>
 
@@ -109,8 +115,13 @@
               <span class="press-sub">отвал 1,5%</span>
             </button>
           </div>
-          <label class="field-label mt-10">Норма вагонеток на смену</label>
-          <input type="number" id="inp-waste-target" class="input-field" min="1" placeholder="Напр., 80" inputmode="numeric">
+
+          <div class="norm-box mt-10">
+            <label class="field-label">Норма вагонеток на смену</label>
+            <input type="number" id="inp-norm-waste" class="input-field norm-input" min="1" placeholder="84" inputmode="numeric">
+            <div class="norm-result">Допустимо в отвал: <strong id="res-waste-allow-waste">—</strong></div>
+          </div>
+
           <label class="field-label mt-10">Тип кирпича</label>
           <select id="sel-brick-waste" class="input-select"></select>
         </div>
