@@ -1,8 +1,11 @@
 /*
 VERSION: 2.2
-⚠️ ПРИ КАЖДОМ ОБНОВЛЕНИИ КОДА УВЕЛИЧИВАЙТЕ ЭТУ ВЕРСИЮ (напр. 1.0 → 1.1)
+⚠️ ПРИ КАЖДОМ ОБНОВЛЕНИИ УВЕЛИЧИВАЙТЕ ВЕРСИЮ
 */
-const CACHE_NAME = 'press-calc-v1.0';
+
+const VERSION = '2.2';
+const CACHE_NAME = `press-calc-v${VERSION}`;
+
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -11,40 +14,67 @@ const ASSETS_TO_CACHE = [
   './manifest.json'
 ];
 
-// 1. Установка: кэшируем статику
+// ─── INSTALL ──────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   console.log('[SW] Установка кэша:', CACHE_NAME);
+
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const url of ASSETS_TO_CACHE) {
+        try {
+          await cache.add(url);
+        } catch (err) {
+          console.warn('[SW] Не удалось закэшировать:', url);
+        }
+      }
+    })
   );
+
   self.skipWaiting();
 });
 
-// 2. Активация: удаляем старые кэши
+// ─── ACTIVATE ─────────────────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   console.log('[SW] Активация:', CACHE_NAME);
+
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => {
+            console.log('[SW] Удаление старого кэша:', key);
+            return caches.delete(key);
+          })
       )
     )
   );
+
   clients.claim();
 });
 
-// 3. Стратегия: Cache First + Network fallback
+// ─── FETCH ────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const request = event.request;
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.ok) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        }
-        return networkResponse;
-      }).catch(() => cachedResponse);
+    caches.match(request).then((cachedResponse) => {
+      const fetchPromise = fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            const responseClone = networkResponse.clone();
+
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+
+          return networkResponse;
+        })
+        .catch(() => cachedResponse);
+
       return cachedResponse || fetchPromise;
     })
   );

@@ -3,13 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  
   <meta name="theme-color" content="#0ea5e9">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- iOS icon -->
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
   <title>Калькулятор прессовщика</title>
-  <link rel="manifest" href="./manifest.json">
+
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="./styles.css">
 </head>
+
 <body>
   <a href="#main" class="skip-link">Перейти к основному содержимому</a>
 
@@ -22,7 +29,8 @@
   </header>
 
   <main id="main" class="main">
-    <!-- ВКЛАДКА: ВРЕМЯ & ПРОГНОЗ -->
+
+    <!-- ВКЛАДКА: ВРЕМЯ -->
     <section class="tab-panel active" id="panel-time">
       <div class="card">
         <div class="card-body">
@@ -60,16 +68,19 @@
             <button class="time-btn" data-min="10.0">10</button>
             <button class="time-btn" data-min="15.0">15</button>
           </div>
+
           <input type="number" id="inp-time" class="input-field mt-6" step="0.1" min="0.1" placeholder="Или введите своё время" inputmode="decimal">
 
           <div class="stopwatch-wrap mt-14">
             <div class="sw-header">⏱ Точный замер вагонетки</div>
             <div class="sw-display">0:00.0</div>
             <div class="sw-decimal">0.00 мин</div>
+
             <div class="sw-controls">
               <button id="btn-sw-start" class="btn-sw-start">▶ СТАРТ</button>
               <button id="btn-sw-stop" class="btn-sw-stop" disabled>⏹ СТОП</button>
             </div>
+
             <button id="btn-sw-apply" class="btn-apply" disabled>✓ ПРИМЕНИТЬ ВРЕМЯ</button>
           </div>
         </div>
@@ -83,13 +94,14 @@
         <div class="card-body">
           <label class="field-label">Осталось напечатать вагонеток</label>
           <input type="number" id="inp-remaining" class="input-field input-lg" min="0" placeholder="Напр., 12" inputmode="numeric">
-          
+
           <div class="forecast-grid mt-12">
             <div class="forecast-box">
               <div class="forecast-icon">⌛</div>
               <div class="forecast-value" id="res-total-time">—</div>
               <div class="forecast-label">Время на остаток</div>
             </div>
+
             <div class="forecast-box">
               <div class="forecast-icon">🏁</div>
               <div class="forecast-value" id="res-eta">—</div>
@@ -100,8 +112,9 @@
       </div>
     </section>
 
-    <!-- ВКЛАДКА: ОТВАЛ & КОНТРОЛЬ -->
+    <!-- ВКЛАДКА: ОТВАЛ -->
     <section class="tab-panel" id="panel-waste" hidden>
+
       <div class="card">
         <div class="card-body">
           <label class="field-label">Выбор пресса</label>
@@ -130,11 +143,13 @@
       <div class="card">
         <div class="card-body">
           <label class="field-label">Ходы в начале смены</label>
-          <input type="number" id="inp-waste-start" class="input-field" placeholder="Напр., 1224424" inputmode="numeric">
-          <label class="field-label mt-10">Ходы по факту (текущая вагонетка)</label>
-          <input type="number" id="inp-waste-current" class="input-field" placeholder="Напр., 1226342" inputmode="numeric">
-          <label class="field-label mt-10">Напечатано вагонеток вручную</label>
-          <input type="number" id="inp-waste-printed" class="input-field" placeholder="Напр., 53" inputmode="numeric">
+          <input type="number" id="inp-waste-start" class="input-field" placeholder="Напр., 1224424">
+
+          <label class="field-label mt-10">Ходы по факту</label>
+          <input type="number" id="inp-waste-current" class="input-field" placeholder="Напр., 1226342">
+
+          <label class="field-label mt-10">Напечатано вагонеток</label>
+          <input type="number" id="inp-waste-printed" class="input-field" placeholder="Напр., 53">
         </div>
       </div>
 
@@ -143,6 +158,7 @@
           <span class="results-icon">📊</span>
           <span class="results-title">Контроль отвала</span>
         </div>
+
         <div class="card-body">
           <div class="forecast-grid mt-10">
             <div class="forecast-box">
@@ -150,12 +166,14 @@
               <div class="forecast-value" id="res-waste-used">0</div>
               <div class="forecast-label">Ходов сделано</div>
             </div>
+
             <div class="forecast-box">
               <div class="forecast-icon">📦</div>
               <div class="forecast-value" id="res-waste-limit">—</div>
-              <div class="forecast-label">Допустимо всего</div>
+              <div class="forecast-label">Допустимо</div>
             </div>
           </div>
+
           <div class="forecast-grid mt-12">
             <div class="forecast-box highlight">
               <div class="forecast-icon">✅</div>
@@ -163,26 +181,34 @@
               <div class="forecast-label">Осталось в отвал</div>
             </div>
           </div>
+
           <div class="progress-wrap mt-12">
-            <div class="progress-bar waste-bar">
-              <div class="progress-fill" id="prog-waste-fill" style="width: 0%"></div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="prog-waste-fill" style="width:0%"></div>
             </div>
-            <div class="progress-label">Использовано нормы: <span id="prog-waste-text">0%</span></div>
+            <div class="progress-label">
+              Использовано: <span id="prog-waste-text">0%</span>
+            </div>
           </div>
         </div>
       </div>
+
     </section>
 
     <div class="bottom-space"></div>
   </main>
 
-  <button id="btn-new-shift" class="fab" aria-label="Новая смена">🔄</button>
+  <button id="btn-new-shift" class="fab">🔄</button>
 
-  <script src="./app.js" type="module" defer></script>
+  <script src="./app.js" type="module"></script>
+
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
     }
   </script>
+
 </body>
 </html>
