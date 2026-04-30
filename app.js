@@ -54,7 +54,7 @@ export function loadState() {
 export function vibrate(p) { if (navigator.vibrate) navigator.vibrate(p); }
 export function formatTime(ms) {
   const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000), ds = Math.floor((ms % 1000) / 100);
-  return `${m}:${s.toString().padStart(2,'0')}.${ds}`;
+  return `${m}:${String(s).padStart(2,'0')}.${ds}`;
 }
 
 // ─── СЕКУНДОМЕР ──────────────────────────────────────────────────────────
@@ -153,11 +153,13 @@ function calcTimeResults() {
     els.resTotalTime.textContent = `${Math.floor(totalMin/60)}ч ${Math.round(totalMin%60)}м`;
 
     const eta = new Date(Date.now() + totalMin * 60000);
-    els.resEta.textContent = `${eta.getHours().toString().padStart(2,'0')}:${eta.getMinutes().toString().padStart(2,'0')}`;
+    els.resEta.textContent = `${String(eta.getHours()).padStart(2,'0')}:${String(eta.getMinutes()).padStart(2,'0')}`;
   } else {
     els.resTotalTime.textContent = '—';
     els.resEta.textContent = '—';
   }
+
+  saveState(); // ✅ сохранение при расчёте
 }
 
 function calcWasteResults() {
@@ -215,8 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.press === 'A') state.normA = val;
     else state.normB = val;
 
-    calcAllowableWaste();
-    calcWasteResults();
+    calcWasteResults(); // содержит и calcAllowableWaste, и saveState
     saveState();
   };
 
@@ -237,11 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
     state.timePerWagonMin = parseFloat(e.target.value) || 0;
     document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
     calcTimeResults();
+    saveState(); // ✅ сохраняем при ручном вводе
   });
 
   els.inpRemaining.addEventListener('input', e => {
     state.remainingWagons = parseInt(e.target.value) || 0;
     calcTimeResults();
+    saveState(); // ✅ сохраняем
   });
 
   // ✅ FIXED (критический баг)

@@ -1,9 +1,9 @@
 /*
-VERSION: 2.2
+VERSION: 2.3
 ⚠️ ПРИ КАЖДОМ ОБНОВЛЕНИИ УВЕЛИЧИВАЙТЕ ВЕРСИЮ
 */
 
-const VERSION = '2.2';
+const VERSION = '2.3';
 const CACHE_NAME = `press-calc-v${VERSION}`;
 
 const ASSETS_TO_CACHE = [
@@ -11,7 +11,10 @@ const ASSETS_TO_CACHE = [
   './index.html',
   './styles.css',
   './app.js',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png'
 ];
 
 // ─── INSTALL ──────────────────────────────────────────────────────────────
