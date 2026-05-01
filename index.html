@@ -30,6 +30,42 @@
 
   <main id="main" class="main">
 
+    <!-- Модальное окно: добавить / редактировать тип кирпича -->
+    <div id="modal-brick" class="modal-overlay hidden">
+      <div class="modal-box">
+        <div class="modal-title" id="modal-brick-title">➕ Добавить тип кирпича</div>
+        <div class="modal-field">
+          <label class="field-label">Марка (название)</label>
+          <input type="text" id="modal-brick-name" class="input-field" placeholder="Напр., СКРпу 1,4">
+        </div>
+        <div class="modal-field">
+          <label class="field-label">Штук на вагонетке</label>
+          <input type="number" id="modal-brick-pieces" class="input-field" placeholder="448" inputmode="numeric" min="1">
+        </div>
+        <div class="modal-field">
+          <label class="field-label">Прессований на вагонетке</label>
+          <input type="number" id="modal-brick-strokes" class="input-field" placeholder="32" inputmode="numeric" min="1">
+        </div>
+        <div class="modal-buttons">
+          <button id="modal-brick-cancel" class="modal-btn modal-btn-secondary">Отмена</button>
+          <button id="modal-brick-save" class="modal-btn modal-btn-primary">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно: управление пользовательскими типами -->
+    <div id="modal-manage" class="modal-overlay hidden">
+      <div class="modal-box">
+        <div class="modal-title">⚙️ Управление типами</div>
+        <div id="manage-list-container" class="manage-types-list">
+          <!-- динамически заполняется -->
+        </div>
+        <div class="modal-buttons">
+          <button id="modal-manage-close" class="modal-btn modal-btn-primary">Закрыть</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ВКЛАДКА: ВРЕМЯ -->
     <section class="tab-panel active" id="panel-time">
       <div class="card">
@@ -54,6 +90,10 @@
 
           <label class="field-label mt-10">Тип кирпича</label>
           <select id="sel-brick-time" class="input-select"></select>
+          <div class="brick-actions-row">
+            <button class="add-brick-btn" data-target="time">➕ Добавить</button>
+            <button class="manage-brick-btn" data-target="time">⚙️ Управление</button>
+          </div>
 
           <label class="field-label mt-10">Время на 1 вагонетку (мин)</label>
           <div class="quick-times">
@@ -137,6 +177,10 @@
 
           <label class="field-label mt-10">Тип кирпича</label>
           <select id="sel-brick-waste" class="input-select"></select>
+          <div class="brick-actions-row">
+            <button class="add-brick-btn" data-target="waste">➕ Добавить</button>
+            <button class="manage-brick-btn" data-target="waste">⚙️ Управление</button>
+          </div>
         </div>
       </div>
 

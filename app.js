@@ -1,5 +1,5 @@
-// ─── КОНФИГ: ПРЕССЫ И КИРПИЧ ───────────────────────────────────────────────
-export const BRICK_TYPES = {
+// ─── КОНФИГ: ПРЕССЫ И КИРПИЧ (стандартные) ──────────────────────────────────
+const DEFAULT_BRICKS = {
   A: [
     { id: 'a_ksurpo', name: 'КСУРПо (720 шт)', pieces: 720, strokes: 36 }
   ],
@@ -26,7 +26,8 @@ const state = {
   wastePrinted: '',
   swState: 'idle',
   swStartTime: 0,
-  swElapsed: 0
+  swElapsed: 0,
+  customBricks: { A: [], B: [] }   // пользовательские типы
 };
 
 // ─── DOM CACHE ────────────────────────────────────────────────────────────
@@ -43,18 +44,52 @@ const els = {
   resTotalTime: $('#res-total-time'), resEta: $('#res-eta'),
   resWasteUsed: $('#res-waste-used'), resWasteLimit: $('#res-waste-limit'), resWasteRemaining: $('#res-waste-remaining'),
   progWasteFill: $('#prog-waste-fill'), progWasteText: $('#prog-waste-text'),
-  fabNewShift: $('#btn-new-shift')
+  fabNewShift: $('#btn-new-shift'),
+  // модалка добавления / редактирования
+  modalOverlay: $('#modal-brick'),
+  modalTitle: $('#modal-brick-title'),
+  modalName: $('#modal-brick-name'),
+  modalPieces: $('#modal-brick-pieces'),
+  modalStrokes: $('#modal-brick-strokes'),
+  modalSave: $('#modal-brick-save'),
+  modalCancel: $('#modal-brick-cancel'),
+  // модалка управления списком
+  modalManage: $('#modal-manage'),
+  manageListContainer: $('#manage-list-container'),
+  modalManageClose: $('#modal-manage-close'),
+  // кнопки действий с типами
+  addBtns: document.querySelectorAll('.add-brick-btn'),
+  manageBtns: document.querySelectorAll('.manage-brick-btn')
 };
 
+// текущий режим редактирования (id типа или null если создаём новый)
+let editModeId = null;
+
 // ─── УТИЛИТЫ ─────────────────────────────────────────────────────────────
-export function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {} }
-export function loadState() {
-  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) Object.assign(state, JSON.parse(raw)); } catch {}
+function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {} }
+function loadState() {
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) {
+    const saved = JSON.parse(raw);
+    Object.assign(state, saved);
+    if (!state.customBricks) state.customBricks = { A: [], B: [] };
+  }} catch {}
 }
-export function vibrate(p) { if (navigator.vibrate) navigator.vibrate(p); }
-export function formatTime(ms) {
+function vibrate(p) { if (navigator.vibrate) navigator.vibrate(p); }
+function formatTime(ms) {
   const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000), ds = Math.floor((ms % 1000) / 100);
   return `${m}:${String(s).padStart(2,'0')}.${ds}`;
+}
+
+// ─── ПОЛУЧЕНИЕ ПОЛНОГО СПИСКА КИРПИЧЕЙ ДЛЯ ПРЕССА (стандартные + кастомные)
+function getFullBrickList(press) {
+  const defaultList = DEFAULT_BRICKS[press] || [];
+  const customList = state.customBricks[press] || [];
+  return [...defaultList, ...customList];
+}
+
+function getBrick() {
+  const list = getFullBrickList(state.press);
+  return list.find(b => b.id === state.brickId) || list[0];
 }
 
 // ─── СЕКУНДОМЕР ──────────────────────────────────────────────────────────
@@ -94,30 +129,27 @@ function pauseSw() { state.swElapsed = Date.now() - state.swStartTime; state.swS
 function stopSw() { state.swElapsed = Date.now() - state.swStartTime; state.swState = 'stopped'; clearInterval(swIntervalId); vibrate([30,20,30]); updateSwUI(); }
 function resetSw() { state.swElapsed = 0; state.swState = 'idle'; clearInterval(swIntervalId); updateSwUI(); }
 
-// ─── ЛОГИКА И РЕНДЕР ─────────────────────────────────────────────────────
-function syncPressUI() {
-  els.pressBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.press === state.press));
-
-  const list = BRICK_TYPES[state.press];
-  if (!list || !list.length) return;
+// ─── ОТРИСОВКА СЕЛЕКТОВ КИРПИЧЕЙ ──────────────────────────────────────────
+function populateBrickSelects() {
+  const list = getFullBrickList(state.press);
+  if (!list.length) return;
 
   if (!list.find(b => b.id === state.brickId)) {
     state.brickId = list[0].id;
   }
 
-  const populate = (sel) => {
-    sel.innerHTML = list.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-    sel.value = state.brickId;
-  };
-
-  populate(els.selBrickTime);
-  populate(els.selBrickWaste);
-
-  updateNormUI();
+  const optionsHtml = list.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  els.selBrickTime.innerHTML = optionsHtml;
+  els.selBrickWaste.innerHTML = optionsHtml;
+  els.selBrickTime.value = state.brickId;
+  els.selBrickWaste.value = state.brickId;
 }
 
-function getBrick() {
-  return BRICK_TYPES[state.press].find(b => b.id === state.brickId) || BRICK_TYPES[state.press][0];
+// ─── СИНХРОНИЗАЦИЯ UI ПРЕССА ─────────────────────────────────────────────
+function syncPressUI() {
+  els.pressBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.press === state.press));
+  populateBrickSelects();
+  updateNormUI();
 }
 
 function updateNormUI() {
@@ -159,7 +191,7 @@ function calcTimeResults() {
     els.resEta.textContent = '—';
   }
 
-  saveState(); // ✅ сохранение при расчёте
+  saveState();
 }
 
 function calcWasteResults() {
@@ -183,9 +215,156 @@ function calcWasteResults() {
   saveState();
 }
 
+// ─── МОДАЛКИ: ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ ТИПА ────────────────────────────
+function clearBrickModalFields() {
+  els.modalName.value = '';
+  els.modalPieces.value = '';
+  els.modalStrokes.value = '';
+  editModeId = null;
+  els.modalTitle.textContent = '➕ Добавить тип кирпича';
+}
+
+function openBrickModal(editId = null) {
+  if (editId) {
+    // режим редактирования
+    const list = getFullBrickList(state.press);
+    const brick = list.find(b => b.id === editId);
+    if (!brick) return;
+    els.modalName.value = brick.name;
+    els.modalPieces.value = brick.pieces;
+    els.modalStrokes.value = brick.strokes;
+    editModeId = editId;
+    els.modalTitle.textContent = '✏️ Редактировать тип';
+  } else {
+    clearBrickModalFields();
+  }
+  els.modalOverlay.classList.remove('hidden');
+  els.modalName.focus();
+}
+
+function closeBrickModal() {
+  els.modalOverlay.classList.add('hidden');
+  clearBrickModalFields();
+}
+
+function saveBrickFromModal() {
+  const name = els.modalName.value.trim();
+  const pieces = parseInt(els.modalPieces.value) || 0;
+  const strokes = parseInt(els.modalStrokes.value) || 0;
+
+  if (!name || pieces <= 0 || strokes <= 0) {
+    alert('Заполните все поля корректно (числа > 0)');
+    return;
+  }
+
+  if (editModeId) {
+    // обновляем существующий кастомный тип
+    const list = state.customBricks[state.press];
+    const idx = list.findIndex(b => b.id === editModeId);
+    if (idx !== -1) {
+      list[idx].name = name;
+      list[idx].pieces = pieces;
+      list[idx].strokes = strokes;
+      // если это был выбранный тип, имя могло измениться — в селекте обновится
+      if (state.brickId === editModeId) {
+        // оставляем выбранным этот же id
+      }
+    }
+  } else {
+    // создаём новый
+    const id = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newBrick = { id, name, pieces, strokes };
+    state.customBricks[state.press].push(newBrick);
+    state.brickId = id;
+  }
+
+  // обновить селекты
+  populateBrickSelects();
+  // пересчитать допустимые значения
+  calcAllowableWaste();
+  calcWasteResults();
+  saveState();
+  closeBrickModal();
+}
+
+// ─── МОДАЛКА: УПРАВЛЕНИЕ СПИСКОМ ──────────────────────────────────────────
+function openManageModal() {
+  renderManageList();
+  els.modalManage.classList.remove('hidden');
+}
+
+function closeManageModal() {
+  els.modalManage.classList.add('hidden');
+}
+
+function renderManageList() {
+  const custom = state.customBricks[state.press] || [];
+  if (custom.length === 0) {
+    els.manageListContainer.innerHTML = '<div class="manage-empty">Нет пользовательских типов</div>';
+    return;
+  }
+
+  let html = '';
+  custom.forEach(brick => {
+    html += `
+      <div class="manage-type-item">
+        <div class="manage-type-info">
+          <div class="manage-type-name">${brick.name}</div>
+          <div class="manage-type-desc">${brick.pieces} шт, ${brick.strokes} пресс.</div>
+        </div>
+        <div class="manage-type-actions">
+          <button data-edit="${brick.id}" title="Редактировать">✏️</button>
+          <button data-delete="${brick.id}" title="Удалить">🗑</button>
+        </div>
+      </div>
+    `;
+  });
+  els.manageListContainer.innerHTML = html;
+
+  // обработчики внутри модалки
+  els.manageListContainer.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.dataset.edit;
+      closeManageModal();
+      openBrickModal(id);
+    });
+  });
+
+  els.manageListContainer.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.dataset.delete;
+      if (confirm('Удалить этот тип кирпича?')) {
+        deleteCustomBrick(id);
+        renderManageList();
+        // если после удаления список опустел, закрываем модалку
+        if (state.customBricks[state.press].length === 0) {
+          closeManageModal();
+        }
+      }
+    });
+  });
+}
+
+function deleteCustomBrick(id) {
+  // удаляем из кастомных
+  state.customBricks[state.press] = state.customBricks[state.press].filter(b => b.id !== id);
+  // если удалённый был выбран, переключаемся на первый доступный
+  if (state.brickId === id) {
+    const list = getFullBrickList(state.press);
+    state.brickId = list[0]?.id || '';
+  }
+  // обновить селекты
+  populateBrickSelects();
+  calcAllowableWaste();
+  calcWasteResults();
+  saveState();
+}
+
 // ─── ИНИЦИАЛИЗАЦИЯ ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
+  if (!state.customBricks) state.customBricks = { A: [], B: [] };
+
   syncPressUI();
   updateSwUI();
 
@@ -195,15 +374,20 @@ document.addEventListener('DOMContentLoaded', () => {
   els.inpWasteCurrent.value = state.wasteCurrent;
   els.inpWastePrinted.value = state.wastePrinted;
 
+  // выбор пресса
   els.pressBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       state.press = btn.dataset.press;
-      state.brickId = BRICK_TYPES[state.press][0].id;
+      const list = getFullBrickList(state.press);
+      if (!list.find(b => b.id === state.brickId)) {
+        state.brickId = list[0]?.id || '';
+      }
       syncPressUI();
       calcWasteResults();
     });
   });
 
+  // выбор кирпича через select
   [els.selBrickTime, els.selBrickWaste].forEach(sel => {
     sel.addEventListener('change', e => {
       state.brickId = e.target.value;
@@ -212,18 +396,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // кнопки "Добавить"
+  els.addBtns.forEach(btn => {
+    btn.addEventListener('click', () => openBrickModal(null));
+  });
+
+  // кнопки "Управление"
+  els.manageBtns.forEach(btn => {
+    btn.addEventListener('click', () => openManageModal());
+  });
+
+  // модальное окно (сохранение / отмена)
+  els.modalSave.addEventListener('click', saveBrickFromModal);
+  els.modalCancel.addEventListener('click', closeBrickModal);
+  els.modalOverlay.addEventListener('click', (e) => {
+    if (e.target === els.modalOverlay) closeBrickModal();
+  });
+
+  // модалка управления
+  els.modalManageClose.addEventListener('click', closeManageModal);
+  els.modalManage.addEventListener('click', (e) => {
+    if (e.target === els.modalManage) closeManageModal();
+  });
+
+  // норма
   const handleNormInput = (e) => {
     const val = parseInt(e.target.value) || 0;
     if (state.press === 'A') state.normA = val;
     else state.normB = val;
 
-    calcWasteResults(); // содержит и calcAllowableWaste, и saveState
+    calcWasteResults();
     saveState();
   };
 
   els.inpNormTime.addEventListener('input', handleNormInput);
   els.inpNormWaste.addEventListener('input', handleNormInput);
 
+  // быстрые кнопки времени
   document.querySelectorAll('.time-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       state.timePerWagonMin = parseFloat(btn.dataset.min) || 0;
@@ -238,16 +447,16 @@ document.addEventListener('DOMContentLoaded', () => {
     state.timePerWagonMin = parseFloat(e.target.value) || 0;
     document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
     calcTimeResults();
-    saveState(); // ✅ сохраняем при ручном вводе
+    saveState();
   });
 
   els.inpRemaining.addEventListener('input', e => {
     state.remainingWagons = parseInt(e.target.value) || 0;
     calcTimeResults();
-    saveState(); // ✅ сохраняем
+    saveState();
   });
 
-  // ✅ FIXED (критический баг)
+  // поля отвала
   els.inpWasteStart.addEventListener('input', e => {
     state.wasteStart = e.target.value;
     calcWasteResults();
@@ -261,6 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
     calcWasteResults();
   });
 
+  // секундомер
   els.btnSwStart.addEventListener('click', () => state.swState === 'running' ? pauseSw() : startSw());
   els.btnSwStop.addEventListener('click', () => state.swState === 'stopped' ? resetSw() : stopSw());
 
@@ -274,6 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
     vibrate([20]);
   });
 
+  // переключение вкладок
   document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(b => {
@@ -289,6 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // кнопка новой смены
   els.fabNewShift.addEventListener('click', () => {
     if (!confirm('Начать новую смену? Все данные сброшены.')) return;
 
