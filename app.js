@@ -265,7 +265,6 @@ function saveBrickFromModal() {
       list[idx].name = name;
       list[idx].pieces = pieces;
       list[idx].strokes = strokes;
-      // если это был выбранный тип, имя могло измениться — в селекте обновится
       if (state.brickId === editModeId) {
         // оставляем выбранным этот же id
       }
@@ -313,8 +312,8 @@ function renderManageList() {
           <div class="manage-type-desc">${brick.pieces} шт, ${brick.strokes} пресс.</div>
         </div>
         <div class="manage-type-actions">
-          <button data-edit="${brick.id}" title="Редактировать">✏️</button>
-          <button data-delete="${brick.id}" title="Удалить">🗑</button>
+          <button data-edit="${brick.id}" title="Редактировать" aria-label="Редактировать">✏️</button>
+          <button data-delete="${brick.id}" title="Удалить" aria-label="Удалить">🗑</button>
         </div>
       </div>
     `;
@@ -373,6 +372,10 @@ document.addEventListener('DOMContentLoaded', () => {
   els.inpWasteStart.value = state.wasteStart;
   els.inpWasteCurrent.value = state.wasteCurrent;
   els.inpWastePrinted.value = state.wastePrinted;
+
+  // ИСПРАВЛЕНИЕ: пересчитываем прогнозы при загрузке сохранённых данных
+  calcTimeResults();
+  calcWasteResults();
 
   // выбор пресса
   els.pressBtns.forEach(btn => {
